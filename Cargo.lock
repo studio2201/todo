@@ -122,7 +122,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-extra",
- "cookie",
  "dotenvy",
  "serde",
  "serde_json",
@@ -259,7 +258,6 @@ dependencies = [
  "gloo-timers 0.3.0",
  "js-sys",
  "serde",
- "serde_json",
  "shared",
  "wasm-bindgen",
  "wasm-bindgen-futures",

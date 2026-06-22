@@ -13,4 +13,3 @@ serde_json = "1.0"
 tower = "0.4"
 axum-extra = { version = "0.9", features = ["cookie"] }
 dotenvy = "0.15"
-cookie = "0.18"

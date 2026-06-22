@@ -143,7 +143,7 @@ pub async fn verify_pin(
         let cookie = Cookie::build(("RUSTDO_PIN", payload.pin))
             .http_only(true)
             .secure(state.is_production)
-            .same_site(cookie::SameSite::Strict)
+            .same_site(axum_extra::extract::cookie::SameSite::Strict)
             .path("/")
             .build();
 

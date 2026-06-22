@@ -12,8 +12,9 @@ No heavy databases, no bloated JavaScript runtime, no tracking—just todos, com
 - 🌓 **Automatic Dark/Light Mode**: Synced to system preference with localStorage override.
 - 💾 **Atomic File-Based Storage**: Todos are persisted safely using atomic file renames to prevent corruption.
 - 🚀 **Blazing Fast WASM**: Client UI is powered by Rust compiled to WebAssembly (via Yew & Trunk).
-- 🔒 **PIN Lockout Protection**: Secure client-IP rate limiting and timing-safe comparisons.
+- 🔒 **PIN Lockout Protection**: Secure client-IP rate limiting and timing-safe constant-time comparisons.
 - 🌐 **PWA & Offline Support**: Fully installable as a web app with service-worker caching.
+- 🌍 **Global Localization (i18n)**: Lightweight type-safe client-side translations supporting 8 languages (English, Chinese, Spanish, German, Japanese, French, Portuguese, Russian).
 
 ---
 
@@ -29,18 +30,19 @@ No heavy databases, no bloated JavaScript runtime, no tracking—just todos, com
 
 ---
 
-## Quick Start
-
-### 1. Build and Run Locally
+## Build and Run Locally
 
 Ensure you have Rust and **Trunk** installed:
+
 ```bash
-# Verify wasm target is installed
+# 1. Install target for WASM compilation
 rustup target add wasm32-unknown-unknown
 
-# Install Trunk for WASM compiling
+# 2. Install Trunk for building the Yew frontend
 cargo install trunk
 ```
+
+### 1. Build and Start the Application
 
 1. **Clone the repository** and navigate to it:
    ```bash
@@ -48,23 +50,27 @@ cargo install trunk
    cd RustDo
    ```
 
-2. **Compile the Yew frontend**:
+2. **Build the Yew frontend assets**:
    ```bash
    cd frontend
    trunk build --release
    cd ..
    ```
 
-3. **Start the Axum server**:
+3. **Start the Axum backend server**:
    ```bash
+   # Defaults to port 3000
    cargo run --bin backend --release
+   
+   # Or run on a custom port (e.g. 3002)
+   PORT=3002 cargo run --bin backend --release
    ```
 
-4. Open `http://localhost:3000` in your browser.
+4. Open `http://localhost:3000` (or `http://localhost:3002`) in your web browser.
 
 ---
 
-### 2. Using Docker Compose
+## Using Docker Compose
 
 Build and spin up the entire application inside a lightweight Alpine container:
 
@@ -95,23 +101,47 @@ services:
 
 ## Project Structure
 
+All source files are strictly bounded between 25 and 250 lines of code for high maintainability.
+
 ```
 RustDo/
-├── Cargo.toml          # Workspace manifest
-├── Dockerfile          # Multi-stage optimized Rust builder
-├── docker-compose.yml  # Docker Compose config
-├── data/               # Persistent todo storage (JSON format)
+├── Cargo.toml                # Workspace manifest (LTO, strip, optimization flags)
+├── Dockerfile                # Multi-stage optimized Rust container builder
+├── docker-compose.yml        # Docker Compose configuration
+├── data/                     # Persistent todo JSON storage folder
 │   └── todos.json
-├── shared/             # Shared Rust libraries (serde structures)
+├── shared/                   # Shared Rust structures (DTO data shapes)
 │   ├── Cargo.toml
-│   └── src/lib.rs
-├── backend/            # Axum HTTP server & APIs
-│   ├── Cargo.toml
-│   └── src/main.rs
-└── frontend/           # Yew frontend (SPA compiled to WASM)
-    ├── Cargo.toml
-    ├── index.html      # Trunk HTML entry point
-    ├── styles.css      # App stylesheet
-    ├── service-worker.js
-    └── src/main.rs     # Yew components
+│   └── src/
+│       └── lib.rs            # Structs for items, config, verification
+├── backend/                  # Axum HTTP server
+│   ├── Cargo.toml            # De-bloated backend manifest (zero rand/sha2/url dependencies)
+│   └── src/
+│       ├── auth.rs           # Zero-allocation timing-safe comparisons and native PRNG IDs
+│       ├── handlers.rs       # Stream serialization I/O and verify handlers
+│       ├── main.rs           # Server routing config & CORS mirroring middleware
+│       ├── middleware.rs     # Authorization & zero-allocation origin parsing
+│       ├── state.rs          # Shared configuration and locking structures
+│       └── static_files.rs   # Static resource pre-caching and asset loading
+└── frontend/                 # Yew WebAssembly client
+    ├── Cargo.toml            # Client manifest (pruned dependencies)
+    ├── index.html            # Trunk entry layout
+    ├── styles.css            # Responsive layout design system
+    ├── service-worker.js     # PWA caching lifecycle
+    └── src/
+        ├── api.rs            # Async API fetch interface
+        ├── i18n/             # Dedicated language dictionaries (en, zh, es, de, ja, fr, pt, ru)
+        ├── i18n.rs           # Type-safe i18n state hook & translate dispatcher
+        ├── list_handlers.rs  # Event handlers for list selection & alterations
+        ├── list_selector.rs  # List switcher UI component
+        ├── login.rs          # Secure login layout centered with absolute buttons
+        ├── main.rs           # Router context binding and index app mount
+        ├── toast.rs          # Toast notifications component
+        ├── todo_form.rs      # Input form for adding tasks
+        ├── todo_header.rs    # Title and list selector controls
+        ├── todo_item.rs      # Todo item supporting editing, reordering, and drag actions
+        ├── todo_items_list.rs# Filters and lists active vs completed tasks
+        ├── todo_list_handlers.rs # Event handlers for task addition, completion, deletion
+        ├── todo_list.rs      # Todo parent container component
+        └── types.rs          # Custom status model properties
 ```
