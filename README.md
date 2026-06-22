@@ -170,23 +170,29 @@ RustDo/
 │       ├── main.rs             # Axum routes, CORS configuration, listener bindings
 │       ├── middleware.rs       # Client auth validations, origin checking
 │       ├── state.rs            # App state properties, IP-resolver helper
-│       └── static_files.rs     # Manifest generator, directory static endpoints
+│       ├── static_files.rs     # Static files endpoint router
+│       └── tests.rs            # Backend unit test suite
 └── frontend/                   # WebAssembly Client UI
     ├── Cargo.toml
     ├── index.html              # HTML shell entry layout
-    ├── styles.css              # Custom Vanilla CSS visual engine (all themes)
-    ├── service-worker.js       # Offline service worker caching assets
+    ├── Assets/                 # Static assets and stylesheets
+    │   ├── app.css             # Unified app styling
+    │   ├── base.css            # Base stylesheet reset and variables
+    │   ├── favicon.svg         # Application tab icon
+    │   ├── header.css          # Navigation and header layout styling
+    │   ├── login.css           # Authentication component styling
+    │   └── service-worker.js   # Offline service worker caching assets
     └── src/
         ├── api.rs              # Fetch API handler (login, fetch, save)
+        ├── app.rs              # Main layout component and routing coordinator
+        ├── header.rs           # Workspace navigation header component
         ├── i18n/               # Dictionary translation dictionaries
         ├── i18n.rs             # Custom translation dispatcher hook
-        ├── list_handlers.rs    # List state event handlers
-        ├── list_selector.rs    # List picker select component
         ├── login.rs            # Login layout
         ├── main.rs             # App mounting entry and context binding
+        ├── storage.rs          # LocalStorage abstractions
         ├── toast.rs            # Toast notifications component
         ├── todo_form.rs        # Text form block for adding todo tasks
-        ├── todo_header.rs      # Header title, selectors, theme buttons
         ├── todo_item.rs        # Task rows supporting dragging & editing
         ├── todo_items_list.rs  # Component separating active vs done tasks
         ├── todo_list_handlers.rs # Task item toggle and delete handlers
