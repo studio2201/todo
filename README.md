@@ -59,8 +59,10 @@ Configure these settings inside your Docker Compose environment or container env
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `PORT` | The port number the backend HTTP server will bind to. | `4403` |
-| `RUSTDO_PIN` | Lock todo access behind a secure digital PIN (4–10 digits). | None |
-| `RUSTDO_SITE_TITLE` | Override the browser title, metadata headers, and PWA name. | `RustDo` |
+| `PORT` | The port number the backend HTTP server will bind to inside the container. | `4403` |
+| `SITE_TITLE` | Custom website title rendered in navigation headers, browser tabs, and PWA manifest. *(Supports fallback `RUSTRUSTDO_TITLE`)* | `RustDo` |
+| `BASE_URL` | Application base URL. Essential when deploying behind reverse proxies to ensure redirect and websocket links are resolved correctly. | `http://localhost:4403` |
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed HTTP request origins (CORS filter). Use `*` to allow all origins. | `*` |
+| `RUSTDO_PIN` | Optional 4–10 digit PIN (numerical only) to lock access to the interface. Leave empty for public mode. | None |
+| `TZ` | Timezone for the container processes and logs. | `UTC` |
 | `SINGLE_LIST` | Force UI to hide list switcher and display only a single list. | `false` |
-| `ALLOWED_ORIGINS` | Restrict CORS allowed origins (comma-separated list). | `*` |
