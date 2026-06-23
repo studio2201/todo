@@ -217,6 +217,8 @@ pub fn app() -> Html {
         })
     };
 
+    let disable_print = todos.as_ref().map(|t| t.values().all(|v| v.is_empty())).unwrap_or(true);
+
     html! {
         <ContextProvider<i18n::I18nContext> context={locale}>
             <Header
@@ -226,6 +228,7 @@ pub fn app() -> Html {
                 is_authenticated={*authenticated}
                 is_pin_required={is_pin_required}
                 on_logout={on_logout}
+                disable_print={disable_print}
             />
             <div class="container">
                 if is_auth {
