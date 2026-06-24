@@ -120,10 +120,12 @@
     position: relative;
 }
 
-[data-theme="dark"] .todo-item { background: rgba(30, 41, 59, 0.35); }
-[data-theme="nord"] .todo-item { background: rgba(43, 49, 60, 0.4); }
-[data-theme="dracula"] .todo-item { background: rgba(40, 42, 54, 0.4); }
-[data-theme="sepia"] .todo-item { background: rgba(253, 246, 227, 0.4); }
+[data-theme="crateria"] .todo-item { background: rgba(29, 24, 46, 0.35); }
+[data-theme="brinstar"] .todo-item { background: rgba(17, 36, 23, 0.4); }
+[data-theme="norfair"] .todo-item { background: rgba(40, 10, 4, 0.4); }
+[data-theme="wrecked_ship"] .todo-item { background: rgba(24, 14, 41, 0.4); }
+[data-theme="maridia"] .todo-item { background: rgba(9, 44, 66, 0.4); }
+[data-theme="tourian"] .todo-item { background: rgba(13, 29, 33, 0.4); }
 
 .todo-item:not(.completed) { cursor: grab; }
 .todo-item.dragging {

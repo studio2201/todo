@@ -16,15 +16,13 @@ pub fn is_authenticated(state: &AppState, cookie_jar: &CookieJar, headers: &Head
         None => return true,
     };
 
-    let provided_pin = cookie_jar
-        .get("RUSTDO_PIN")
-        .map(|c| c.value())
-        .or_else(|| headers.get("x-pin").and_then(|h| h.to_str().ok()));
+    let cookie_pin = cookie_jar.get("RUSTDO_PIN").map(|c| c.value());
+    let header_pin = headers.get("x-pin").and_then(|h| h.to_str().ok());
 
-    if let Some(provided) = provided_pin {
-        secure_compare(provided, pin_env)
-    } else {
-        false
+    match (cookie_pin, header_pin) {
+        (Some(cookie), _) => secure_compare(cookie, &crate::auth::hash_pin(pin_env)),
+        (None, Some(hdr)) => secure_compare(hdr, pin_env),
+        (None, None) => false,
     }
 }
 

@@ -4,20 +4,24 @@ use std::io::Read;
 
 pub const MAX_ATTEMPTS: usize = 5;
 
-// Cryptographically secure constant-time string comparison padded to 10 characters
+// Cryptographically secure constant-time string comparison
 pub fn secure_compare(a: &str, b: &str) -> bool {
-    let a_bytes = a.as_bytes();
-    let b_bytes = b.as_bytes();
-    let equal = a_bytes.len() == b_bytes.len();
-
-    let mut diff = 0u8;
-    for i in 0..10 {
-        let char_a = if i < a_bytes.len() { a_bytes[i] } else { 0 };
-        let char_b = if i < b_bytes.len() { b_bytes[i] } else { 0 };
-        diff |= char_a ^ char_b;
+    if a.len() != b.len() {
+        return false;
     }
+    let mut diff = 0u8;
+    for (x, y) in a.bytes().zip(b.bytes()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
 
-    equal && (diff == 0)
+pub fn hash_pin(pin: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    let result = hasher.finalize();
+    format!("{:x}", result)
 }
 
 // Generate random alphanumeric 9-character ID using /dev/urandom or LCG

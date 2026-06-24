@@ -37,6 +37,7 @@ async fn main() {
         .unwrap_or(4403);
 
     let pin = std::env::var("RUSTDO_PIN")
+        .or_else(|_| std::env::var("PIN"))
         .ok()
         .filter(|p| !p.trim().is_empty());
     let site_title = std::env::var("RUSTDO_TITLE")

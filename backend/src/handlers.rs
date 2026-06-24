@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::auth::{secure_compare, MAX_ATTEMPTS};
+use crate::auth::{secure_compare, hash_pin, MAX_ATTEMPTS};
 use crate::state::{get_client_ip, SharedState};
 use shared::{PinRequiredResponse, SiteConfig, VerifyPinRequest, VerifyPinResponse};
 
@@ -146,7 +146,7 @@ pub async fn verify_pin(
             .map(|v| v.eq_ignore_ascii_case("https"))
             .unwrap_or(false);
 
-        let cookie = Cookie::build(("RUSTDO_PIN", payload.pin))
+        let cookie = Cookie::build(("RUSTDO_PIN", hash_pin(&payload.pin)))
             .http_only(true)
             .secure(is_secure)
             .same_site(axum_extra::extract::cookie::SameSite::Strict)
