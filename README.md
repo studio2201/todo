@@ -8,6 +8,15 @@ Adam is a blazing fast, single-purpose todo list application written in 100% Rus
 
 ---
 
+## 📦 Container Registry
+
+The Docker image is published to the following registries:
+
+*   **Docker Hub (Recommended)**: [ubermetroid/adam](https://hub.docker.com/r/ubermetroid/adam)
+*   **GitHub Container Registry (GHCR)**: [ghcr.io/ubermetroid/adam](https://github.com/UberMetroid/adam/pkgs/container/adam)
+
+---
+
 ## 🐳 Container Installation
 
 1. Create a `docker-compose.yml` file:
