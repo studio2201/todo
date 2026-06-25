@@ -31,10 +31,10 @@ jobs:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: determinate-systems/nix-installer-action@v4
+        uses: DeterminateSystems/determinate-nix-action@v3
 
       - name: Run Magic Nix Cache
-        uses: determinate-systems/magic-nix-cache-action@v4
+        uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Build Docker Image with Nix
         run: nix build .#dockerImage
