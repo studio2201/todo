@@ -34,10 +34,14 @@ services:
       - ./data:/app/data
     environment:
       - PORT=4403
-      - ADAM_PIN=1234
       - SITE_TITLE=Adam
-      - SINGLE_LIST=false
+      - BASE_URL=http://localhost:4403
       - ALLOWED_ORIGINS=*
+      - ADAM_PIN=1234
+      - TZ=UTC
+      - ENABLE_TRANSLATION=false
+      - ENABLE_THEMES=true
+      - ENABLE_PRINT=true
 ```
 
 2. Run the container:
