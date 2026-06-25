@@ -88,7 +88,7 @@
             ExposedPorts = {
               "4403/tcp" = {};
             };
-            User = "nobody:nobody";
+            User = "65534:65534";
           };
 
           # Create /app directory structure inside the container
