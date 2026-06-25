@@ -1,5 +1,5 @@
 {
-  description: "Minimalist Nix-built container for RustDo";
+  description = "Minimalist Nix-built container for Adam";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -22,8 +22,8 @@
 
         # 1. Build the WASM frontend
         frontend = pkgs.stdenv.mkDerivation {
-          pname = "rustdo-frontend";
-          version = "0.2.0";
+          pname = "adam-frontend";
+          version = "2.0.0";
           src = ./.;
 
           nativeBuildInputs = [
@@ -46,8 +46,8 @@
 
         # 2. Build the Axum backend
         backend = rustPlatform.buildRustPackage {
-          pname = "rustdo-backend";
-          version = "0.2.0";
+          pname = "adam-backend";
+          version = "2.0.0";
           src = ./.;
 
           cargoLock = {
@@ -71,7 +71,7 @@
 
         # 3. Create the layered Docker container image
         dockerImage = pkgs.dockerTools.buildLayeredImage {
-          name = "rustdo-nix";
+          name = "adam-nix";
           tag = "latest";
           
           # Run under the nobody user (UID 65534)
@@ -80,7 +80,6 @@
             WorkingDir = "/app";
             Env = [
               "PORT=4403"
-              "RUSTDO_DATA_PATH=/app/data"
             ];
             ExposedPorts = {
               "4403/tcp" = {};
