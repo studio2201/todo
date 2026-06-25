@@ -135,6 +135,14 @@ async fn main() {
         .map(|v| v == "true" || v == "on")
         .unwrap_or(false);
 
+    let enable_themes = std::env::var("ENABLE_THEMES")
+        .map(|v| v != "false" && v != "off")
+        .unwrap_or(true);
+
+    let enable_print = std::env::var("ENABLE_PRINT")
+        .map(|v| v != "false" && v != "off")
+        .unwrap_or(true);
+
     let app_state = Arc::new(AppState {
         pin,
         site_title,
@@ -145,6 +153,8 @@ async fn main() {
         asset_manifest,
         max_attempts,
         enable_translation,
+        enable_themes,
+        enable_print,
         login_attempts: RwLock::new(HashMap::new()),
     });
 

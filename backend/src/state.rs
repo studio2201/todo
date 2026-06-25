@@ -12,6 +12,8 @@ pub struct AppState {
     pub asset_manifest: Vec<String>,
     pub max_attempts: usize,
     pub enable_translation: bool,
+    pub enable_themes: bool,
+    pub enable_print: bool,
     // IP -> (failed_attempts, last_attempt_time)
     pub login_attempts: RwLock<HashMap<String, (usize, Instant)>>,
 }

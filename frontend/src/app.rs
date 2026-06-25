@@ -21,6 +21,8 @@ pub fn app() -> Html {
             attempts_left: 5,
             lockout_minutes: 15,
             enable_translation: false,
+            enable_themes: true,
+            enable_print: true,
         })
     });
     let authenticated = use_state(|| false);
@@ -102,10 +104,11 @@ pub fn app() -> Html {
     };
 
     {
-        let (site_config, pin_required, load_todos) = (
+        let (site_config, pin_required, load_todos, theme) = (
             site_config.clone(),
             pin_required.clone(),
             load_todos.clone(),
+            theme.clone(),
         );
         use_effect_with((), move |_| {
             wasm_bindgen_futures::spawn_local(async move {
@@ -113,6 +116,18 @@ pub fn app() -> Html {
                     if let Some(win) = web_sys::window() {
                         if let Some(doc) = win.document() {
                             doc.set_title(&config.site_title);
+                        }
+                    }
+                    if !config.enable_themes {
+                        theme.set("tourian".to_string());
+                        StorageService::set_item("theme", "tourian");
+                        if let Some(win) = web_sys::window() {
+                            if let Some(doc) = win.document() {
+                                if let Some(el) = doc.document_element() {
+                                    let _ = el.set_attribute("data-theme", "tourian");
+                                    let _ = el.set_attribute("class", "tourian");
+                                }
+                            }
                         }
                     }
                     site_config.set(Some(config));
@@ -175,6 +190,8 @@ pub fn app() -> Html {
     let site_config_fallback = site_config.as_ref().cloned().unwrap_or_else(|| SiteConfig {
         site_title: "RustDo".to_string(),
         single_list: false,
+        enable_themes: true,
+        enable_print: true,
     });
     let is_pin_required = pin_required.as_ref().map(|pr| pr.required).unwrap_or(false);
     let on_logout = {

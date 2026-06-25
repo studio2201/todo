@@ -16,6 +16,8 @@ pub type TodoLists = HashMap<String, Vec<TodoItem>>;
 pub struct SiteConfig {
     pub site_title: String,
     pub single_list: bool,
+    pub enable_themes: bool,
+    pub enable_print: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -27,6 +29,8 @@ pub struct PinRequiredResponse {
     pub attempts_left: usize,
     pub lockout_minutes: u64,
     pub enable_translation: bool,
+    pub enable_themes: bool,
+    pub enable_print: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
