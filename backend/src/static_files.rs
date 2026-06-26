@@ -103,3 +103,14 @@ async fn serve_static_file(path: &str, content_type: &str) -> Response {
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
+
+pub async fn serve_index(State(state): State<SharedState>) -> impl IntoResponse {
+    let path = Path::new("frontend/dist/index.html");
+    match tokio::fs::read_to_string(path).await {
+        Ok(content) => {
+            let rendered = content.replace("{{SITE_TITLE}}", &state.site_title);
+            axum::response::Html(rendered).into_response()
+        }
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
+}

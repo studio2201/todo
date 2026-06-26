@@ -26,7 +26,7 @@ use middleware::{
 use state::AppState;
 use static_files::{
     build_asset_manifest, serve_asset_manifest, serve_favicon, serve_favicon_png, serve_health,
-    serve_manifest, serve_service_worker,
+    serve_index, serve_manifest, serve_service_worker,
 };
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -223,6 +223,8 @@ async fn main() {
 
     let app = Router::new()
         .nest("/api", api_routes)
+        .route("/", get(serve_index))
+        .route("/index.html", get(serve_index))
         .route("/favicon.svg", get(serve_favicon))
         .route("/favicon.png", get(serve_favicon_png))
         .route("/manifest.json", get(serve_manifest))
