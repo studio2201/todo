@@ -43,6 +43,7 @@ pub fn app() -> Html {
     let show_version = site_config.as_ref().map(|c| c.show_version).or_else(|| pin_required.as_ref().map(|p| p.show_version)).unwrap_or(true);
     let show_github = site_config.as_ref().map(|c| c.show_github).or_else(|| pin_required.as_ref().map(|p| p.show_github)).unwrap_or(true);
     let version = env!("CARGO_PKG_VERSION").to_string();
+    let version_url = format!("https://github.com/UberMetroid/todo/releases/tag/v{}", version);
 
     {
         let locale = locale.clone();
@@ -276,7 +277,7 @@ pub fn app() -> Html {
                     }
                 }
             </div>
-            <crate::footer::Footer {show_version} {version} {show_github}>
+            <crate::footer::Footer {show_version} {version} {show_github} {version_url}>
                 {
                     if let Some((msg, cls)) = &*active_notification {
                         html! { <div class={format!("footer-status-text {}", cls)}>{ msg }</div> }
