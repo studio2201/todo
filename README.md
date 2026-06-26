@@ -22,10 +22,9 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 
 ## 📦 Container Registry
 
-The Docker image is published to the following registries:
+The Docker image is built with **Nix** (no Alpine, fully reproducible) and published to Docker Hub:
 
-*   **Docker Hub (Recommended)**: [ubermetroid/todo](https://hub.docker.com/r/ubermetroid/todo)
-*   **GitHub Container Registry (GHCR)**: [ghcr.io/ubermetroid/todo](https://github.com/UberMetroid/todo/pkgs/container/todo)
+*   **Docker Hub**: [ubermetroid/todo](https://hub.docker.com/r/ubermetroid/todo)
 
 ---
 
@@ -66,10 +65,28 @@ docker compose up -d
 
 ### Building the Image Locally
 
-To build the Docker container locally from the source files:
+To build the Docker container locally from the source files using Nix:
 
 ```bash
-docker build -t ubermetroid/todo:latest .
+nix build .#dockerImage
+docker load < result
+docker tag todo-nix:latest ubermetroid/todo:latest
+```
+
+The image is Nix-built (no Alpine, no Docker daemon dependency for the build).
+For development iteration, use the devShell:
+
+```bash
+nix develop
+```
+
+### APT (Debian / Ubuntu)
+
+Todo is also distributed as a `.deb` package from the official UberMetroid APT repository:
+
+```bash
+curl -fsSL https://ubermetroid.github.io/packages/apt/install.sh | sudo bash
+sudo apt install todo
 ```
 
 ---
