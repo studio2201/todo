@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TodoItem {
     #[serde(default)]
@@ -18,6 +22,10 @@ pub struct SiteConfig {
     pub single_list: bool,
     pub enable_themes: bool,
     pub enable_print: bool,
+    #[serde(default = "default_true")]
+    pub show_version: bool,
+    #[serde(default = "default_true")]
+    pub show_github: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -31,6 +39,10 @@ pub struct PinRequiredResponse {
     pub enable_translation: bool,
     pub enable_themes: bool,
     pub enable_print: bool,
+    #[serde(default = "default_true")]
+    pub show_version: bool,
+    #[serde(default = "default_true")]
+    pub show_github: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]

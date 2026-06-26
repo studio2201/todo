@@ -24,6 +24,8 @@ pub fn app() -> Html {
             enable_translation: false,
             enable_themes: true,
             enable_print: false,
+            show_version: true,
+            show_github: true,
         })
     });
     let authenticated = use_state(|| false);
@@ -37,6 +39,10 @@ pub fn app() -> Html {
         let local_lang = StorageService::get_item("lang", "en");
         i18n::Locale::from_str(&local_lang)
     });
+
+    let show_version = site_config.as_ref().map(|c| c.show_version).or_else(|| pin_required.as_ref().map(|p| p.show_version)).unwrap_or(true);
+    let show_github = site_config.as_ref().map(|c| c.show_github).or_else(|| pin_required.as_ref().map(|p| p.show_github)).unwrap_or(true);
+    let version = env!("CARGO_PKG_VERSION").to_string();
 
     {
         let locale = locale.clone();
@@ -193,6 +199,8 @@ pub fn app() -> Html {
         single_list: false,
         enable_themes: true,
         enable_print: false,
+        show_version: true,
+        show_github: true,
     });
     let is_pin_required = pin_required.as_ref().map(|pr| pr.required).unwrap_or(false);
     let on_logout = {
@@ -268,7 +276,7 @@ pub fn app() -> Html {
                     }
                 }
             </div>
-            <footer class="layout-footer">
+            <crate::footer::Footer {show_version} {version} {show_github}>
                 {
                     if let Some((msg, cls)) = &*active_notification {
                         html! { <div class={format!("footer-status-text {}", cls)}>{ msg }</div> }
@@ -276,7 +284,7 @@ pub fn app() -> Html {
                         html! { <div class="footer-status-text success">{"Ready"}</div> }
                     }
                 }
-            </footer>
+            </crate::footer::Footer>
         </ContextProvider<i18n::I18nContext>>
     }
 }

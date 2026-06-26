@@ -149,6 +149,14 @@ async fn main() {
         .map(|v| v == "true" || v == "on")
         .unwrap_or(false);
 
+    let show_version = std::env::var("SHOW_VERSION")
+        .map(|v| v != "false" && v != "off")
+        .unwrap_or(true);
+
+    let show_github = std::env::var("SHOW_GITHUB")
+        .map(|v| v != "false" && v != "off")
+        .unwrap_or(true);
+
     let app_state = Arc::new(AppState {
         pin,
         site_title,
@@ -161,6 +169,8 @@ async fn main() {
         enable_translation,
         enable_themes,
         enable_print,
+        show_version,
+        show_github,
         login_attempts: RwLock::new(HashMap::new()),
         active_sessions: RwLock::new(std::collections::HashSet::new()),
         rate_limiter: RwLock::new(HashMap::new()),

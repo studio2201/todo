@@ -56,6 +56,8 @@ pub async fn get_pin_required(
         enable_translation: state.enable_translation,
         enable_themes: state.enable_themes,
         enable_print: state.enable_print,
+        show_version: state.show_version,
+        show_github: state.show_github,
     })
 }
 
@@ -207,6 +209,8 @@ pub async fn get_config(State(state): State<SharedState>) -> Json<SiteConfig> {
         single_list: state.single_list,
         enable_themes: state.enable_themes,
         enable_print: state.enable_print,
+        show_version: state.show_version,
+        show_github: state.show_github,
     })
 }
 

@@ -14,6 +14,8 @@ pub struct AppState {
     pub enable_translation: bool,
     pub enable_themes: bool,
     pub enable_print: bool,
+    pub show_version: bool,
+    pub show_github: bool,
     // IP -> (failed_attempts, last_attempt_time)
     pub login_attempts: RwLock<HashMap<String, (usize, Instant)>>,
     pub active_sessions: RwLock<std::collections::HashSet<String>>,
