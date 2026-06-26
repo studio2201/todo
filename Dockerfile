@@ -53,15 +53,13 @@ COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 # Setup data directory with correct ownership
 RUN mkdir -p /app/data && chown -R 99:100 /app
 
-# Expose server port (internal port)
-EXPOSE 4403
-
-# Healthcheck
-HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget --spider -q http://127.0.0.1:4403/health || exit 1
-
 # Run as Unraid nobody:users
 USER 99:100
+
+EXPOSE 4403
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s CMD wget -qO- http://localhost:4403/health || exit 1
 
 # Run the server
 CMD ["/app/backend"]
