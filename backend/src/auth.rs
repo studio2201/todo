@@ -71,25 +71,23 @@ pub fn generate_random_id() -> String {
 }
 
 pub fn run_todo_migrations(data_file: &str) {
-    if let Ok(content) = std::fs::read_to_string(data_file) {
-        if let Ok(mut lists) = serde_json::from_str::<TodoLists>(&content) {
-            let mut updated = false;
-            for items in lists.values_mut() {
-                for item in items.iter_mut() {
-                    if item.id.is_empty() {
-                        item.id = generate_random_id();
-                        updated = true;
-                    }
+    if let Ok(content) = std::fs::read_to_string(data_file)
+        && let Ok(mut lists) = serde_json::from_str::<TodoLists>(&content)
+    {
+        let mut updated = false;
+        for items in lists.values_mut() {
+            for item in items.iter_mut() {
+                if item.id.is_empty() {
+                    item.id = generate_random_id();
+                    updated = true;
                 }
             }
-            if updated {
-                if let Ok(serialized) = serde_json::to_string_pretty(&lists) {
-                    let temp_file = format!("{}.tmp", data_file);
-                    if std::fs::write(&temp_file, serialized).is_ok() {
-                        let _ = std::fs::rename(temp_file, data_file);
-                        println!("Migration: assigned unique IDs to tasks.");
-                    }
-                }
+        }
+        if updated && let Ok(serialized) = serde_json::to_string_pretty(&lists) {
+            let temp_file = format!("{}.tmp", data_file);
+            if std::fs::write(&temp_file, serialized).is_ok() {
+                let _ = std::fs::rename(temp_file, data_file);
+                println!("Migration: assigned unique IDs to tasks.");
             }
         }
     }

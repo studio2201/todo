@@ -87,10 +87,11 @@ pub fn app() -> Html {
                             authenticated.set(false);
                         } else if let Ok(data) = resp.json::<TodoLists>().await {
                             authenticated.set(true);
-                            if !data.is_empty() && !data.contains_key(&*current_list) {
-                                if let Some(first_key) = data.keys().next() {
-                                    current_list.set(first_key.clone());
-                                }
+                            if !data.is_empty()
+                                && !data.contains_key(&*current_list)
+                                && let Some(first_key) = data.keys().next()
+                            {
+                                current_list.set(first_key.clone());
                             }
                             todos.set(Some(data));
                         }
@@ -113,21 +114,20 @@ pub fn app() -> Html {
         use_effect_with((), move |_| {
             wasm_bindgen_futures::spawn_local(async move {
                 if let Ok(config) = api::fetch_config().await {
-                    if let Some(win) = web_sys::window() {
-                        if let Some(doc) = win.document() {
-                            doc.set_title(&config.site_title);
-                        }
+                    if let Some(win) = web_sys::window()
+                        && let Some(doc) = win.document()
+                    {
+                        doc.set_title(&config.site_title);
                     }
                     if !config.enable_themes {
                         theme.set("tourian".to_string());
                         StorageService::set_item("theme", "tourian");
-                        if let Some(win) = web_sys::window() {
-                            if let Some(doc) = win.document() {
-                                if let Some(el) = doc.document_element() {
-                                    let _ = el.set_attribute("data-theme", "tourian");
-                                    let _ = el.set_attribute("class", "tourian");
-                                }
-                            }
+                        if let Some(win) = web_sys::window()
+                            && let Some(doc) = win.document()
+                            && let Some(el) = doc.document_element()
+                        {
+                            let _ = el.set_attribute("data-theme", "tourian");
+                            let _ = el.set_attribute("class", "tourian");
                         }
                     }
                     site_config.set(Some(config));

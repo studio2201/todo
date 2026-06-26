@@ -48,10 +48,10 @@ pub fn todo_item_component(props: &TodoItemProps) -> Html {
         let target_id = id.clone();
         Callback::from(move |e: DragEvent| {
             e.prevent_default();
-            if let Some(ref drag_id) = *dragged_todo_id {
-                if *drag_id != target_id {
-                    on_drag_reorder.emit((drag_id.clone(), target_id.clone()));
-                }
+            if let Some(ref drag_id) = *dragged_todo_id
+                && *drag_id != target_id
+            {
+                on_drag_reorder.emit((drag_id.clone(), target_id.clone()));
             }
         })
     };

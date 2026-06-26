@@ -1,5 +1,5 @@
 use crate::api;
-use crate::i18n::{use_i18n, TransKey};
+use crate::i18n::{TransKey, use_i18n};
 use crate::todo_form::TodoForm;
 use crate::todo_items_list::TodoItemsList;
 use crate::todo_list_handlers;

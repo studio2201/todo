@@ -1,4 +1,4 @@
-use crate::i18n::{use_i18n, TransKey};
+use crate::i18n::{TransKey, use_i18n};
 use shared::PinRequiredResponse;
 use yew::prelude::*;
 
@@ -23,10 +23,8 @@ pub fn login(props: &LoginProps) -> Html {
         let input_ref = input_ref.clone();
         let is_locked = pr.locked;
         use_effect_with(is_locked, move |locked| {
-            if !*locked {
-                if let Some(input) = input_ref.cast::<web_sys::HtmlInputElement>() {
-                    let _ = input.focus();
-                }
+            if !*locked && let Some(input) = input_ref.cast::<web_sys::HtmlInputElement>() {
+                let _ = input.focus();
             }
         });
     }

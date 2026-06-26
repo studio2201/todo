@@ -28,7 +28,7 @@ impl AppState {
 
         let mut map = self.rate_limiter.write().await;
         let timestamps = map.entry(ip.to_string()).or_insert_with(Vec::new);
-        
+
         timestamps.retain(|&t| now.duration_since(t) < window);
 
         if timestamps.len() >= max_requests {
@@ -54,22 +54,21 @@ pub type SharedState = Arc<AppState>;
 
 // Extracts client IP address taking reverse proxies (e.g. Cloudflare, nginx) into account
 pub fn get_client_ip(connect_info: &ConnectInfo<SocketAddr>, headers: &HeaderMap) -> String {
-    if let Some(cf_connecting_ip) = headers.get("cf-connecting-ip") {
-        if let Ok(ip) = cf_connecting_ip.to_str() {
-            return ip.to_string();
-        }
+    if let Some(cf_connecting_ip) = headers.get("cf-connecting-ip")
+        && let Ok(ip) = cf_connecting_ip.to_str()
+    {
+        return ip.to_string();
     }
-    if let Some(x_forwarded_for) = headers.get("x-forwarded-for") {
-        if let Ok(ip_list) = x_forwarded_for.to_str() {
-            if let Some(ip) = ip_list.split(',').next() {
-                return ip.trim().to_string();
-            }
-        }
+    if let Some(x_forwarded_for) = headers.get("x-forwarded-for")
+        && let Ok(ip_list) = x_forwarded_for.to_str()
+        && let Some(ip) = ip_list.split(',').next()
+    {
+        return ip.trim().to_string();
     }
-    if let Some(x_real_ip) = headers.get("x-real-ip") {
-        if let Ok(ip) = x_real_ip.to_str() {
-            return ip.to_string();
-        }
+    if let Some(x_real_ip) = headers.get("x-real-ip")
+        && let Ok(ip) = x_real_ip.to_str()
+    {
+        return ip.to_string();
     }
     connect_info.ip().to_string()
 }

@@ -1,7 +1,6 @@
 use axum::{
-    middleware as axum_middleware,
+    Router, middleware as axum_middleware,
     routing::{get, post},
-    Router,
 };
 use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
@@ -20,7 +19,10 @@ mod tests;
 
 use auth::run_todo_migrations;
 use handlers::{get_config, get_pin_required, get_todos, logout, save_todos, verify_pin};
-use middleware::{auth_middleware, origin_validation_middleware, security_headers_middleware, rate_limit_middleware};
+use middleware::{
+    auth_middleware, origin_validation_middleware, rate_limit_middleware,
+    security_headers_middleware,
+};
 use state::AppState;
 use static_files::{
     build_asset_manifest, serve_asset_manifest, serve_favicon, serve_favicon_png, serve_manifest,
@@ -46,13 +48,11 @@ async fn main() {
             let _ = std::fs::create_dir_all(dir);
             let error_file = std::fs::OpenOptions::new()
                 .create(true)
-                .write(true)
                 .append(true)
                 .open(std::path::Path::new(dir).join("error.log"))
                 .ok();
             let app_file = std::fs::OpenOptions::new()
                 .create(true)
-                .write(true)
                 .append(true)
                 .open(std::path::Path::new(dir).join("app.log"))
                 .ok();
@@ -122,10 +122,10 @@ async fn main() {
         eprintln!("Failed to create data directory: {}", e);
     }
 
-    if !std::path::Path::new(&data_file).exists() {
-        if let Err(e) = std::fs::write(&data_file, "{}") {
-            eprintln!("Failed to initialize todos file: {}", e);
-        }
+    if !std::path::Path::new(&data_file).exists()
+        && let Err(e) = std::fs::write(&data_file, "{}")
+    {
+        eprintln!("Failed to initialize todos file: {}", e);
     }
 
     run_todo_migrations(&data_file);
@@ -172,7 +172,8 @@ async fn main() {
             tokio::time::sleep(Duration::from_secs(60)).await;
             {
                 let mut attempts = clean_state.login_attempts.write().await;
-                attempts.retain(|_, (_, last_time)| last_time.elapsed() < Duration::from_secs(15 * 60));
+                attempts
+                    .retain(|_, (_, last_time)| last_time.elapsed() < Duration::from_secs(15 * 60));
             }
             clean_state.clean_old_rate_limits().await;
         }

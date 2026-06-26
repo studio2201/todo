@@ -1,4 +1,4 @@
-use crate::i18n::{use_i18n, TransKey};
+use crate::i18n::{TransKey, use_i18n};
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]

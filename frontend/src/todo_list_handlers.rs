@@ -1,4 +1,4 @@
-use crate::i18n::{translate, Locale, TransKey};
+use crate::i18n::{Locale, TransKey, translate};
 use crate::types::ToastType;
 use shared::{TodoItem, TodoLists};
 use wasm_bindgen::JsCast;
@@ -105,12 +105,11 @@ pub fn edit_save_todo_handler(
             if let Some(item) = data
                 .get_mut(&current_list)
                 .and_then(|l| l.iter_mut().find(|t| t.id == id))
+                && item.text != clean_text
             {
-                if item.text != clean_text {
-                    item.text = clean_text;
-                    save_list_todos.emit(data);
-                    show_toast.emit((translate(locale, TransKey::TaskUpdated), ToastType::Success));
-                }
+                item.text = clean_text;
+                save_list_todos.emit(data);
+                show_toast.emit((translate(locale, TransKey::TaskUpdated), ToastType::Success));
             }
         }
     })

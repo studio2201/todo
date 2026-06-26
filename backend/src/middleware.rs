@@ -1,9 +1,9 @@
 use axum::{
-    extract::{State, ConnectInfo},
+    Json,
+    extract::{ConnectInfo, State},
     http::{HeaderMap, Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
-    Json,
 };
 use axum_extra::extract::cookie::CookieJar;
 use std::net::SocketAddr;
@@ -11,7 +11,11 @@ use std::net::SocketAddr;
 use crate::auth::secure_compare;
 use crate::state::{AppState, SharedState, get_client_ip};
 
-pub async fn is_authenticated(state: &AppState, cookie_jar: &CookieJar, headers: &HeaderMap) -> bool {
+pub async fn is_authenticated(
+    state: &AppState,
+    cookie_jar: &CookieJar,
+    headers: &HeaderMap,
+) -> bool {
     let pin_env = match &state.pin {
         Some(p) => p,
         None => return true,

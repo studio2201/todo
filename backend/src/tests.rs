@@ -1,8 +1,8 @@
 use super::*;
 use axum::{
+    Json,
     extract::{ConnectInfo, State},
     http::{HeaderMap, StatusCode},
-    Json,
 };
 use axum_extra::extract::cookie::CookieJar;
 use shared::VerifyPinRequest;
@@ -45,6 +45,10 @@ async fn test_get_config_handler() {
         login_attempts: RwLock::new(HashMap::new()),
         enable_translation: false,
         max_attempts: 5,
+        enable_themes: false,
+        enable_print: false,
+        active_sessions: RwLock::new(std::collections::HashSet::new()),
+        rate_limiter: RwLock::new(HashMap::new()),
     });
 
     let config = handlers::get_config(State(state)).await;
@@ -65,6 +69,10 @@ async fn test_get_pin_required_handler() {
         login_attempts: RwLock::new(HashMap::new()),
         enable_translation: false,
         max_attempts: 5,
+        enable_themes: false,
+        enable_print: false,
+        active_sessions: RwLock::new(std::collections::HashSet::new()),
+        rate_limiter: RwLock::new(HashMap::new()),
     });
 
     let connect_info = ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345)));
@@ -90,6 +98,10 @@ async fn test_verify_pin_handler() {
         login_attempts: RwLock::new(HashMap::new()),
         enable_translation: false,
         max_attempts: 5,
+        enable_themes: false,
+        enable_print: false,
+        active_sessions: RwLock::new(std::collections::HashSet::new()),
+        rate_limiter: RwLock::new(HashMap::new()),
     });
 
     let connect_info = ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345)));

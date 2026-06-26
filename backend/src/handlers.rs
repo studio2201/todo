@@ -1,8 +1,8 @@
 use axum::{
+    Json,
     extract::{ConnectInfo, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    Json,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar};
 use serde_json::Value;
@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::auth::secure_compare;
-use crate::state::{get_client_ip, SharedState};
+use crate::state::{SharedState, get_client_ip};
 use shared::{PinRequiredResponse, SiteConfig, VerifyPinRequest, VerifyPinResponse};
 
 const LOCKOUT_TIME: Duration = Duration::from_secs(15 * 60); // 15 minutes
@@ -86,25 +86,26 @@ pub async fn verify_pin(
 
     {
         let attempts = state.login_attempts.read().await;
-        if let Some(&(failed_count, last_attempt)) = attempts.get(&client_ip) {
-            if failed_count >= state.max_attempts && last_attempt.elapsed() < LOCKOUT_TIME {
-                let remaining = LOCKOUT_TIME.saturating_sub(last_attempt.elapsed());
-                let minutes = remaining.as_secs().div_ceil(60);
-                return (
-                    StatusCode::TOO_MANY_REQUESTS,
-                    Json(VerifyPinResponse {
-                        valid: false,
-                        error: Some(format!(
-                            "Too many attempts. Please try again in {} minutes.",
-                            minutes
-                        )),
-                        attempts_left: Some(0),
-                        locked: Some(true),
-                        lockout_minutes: Some(minutes),
-                    }),
-                )
-                    .into_response();
-            }
+        if let Some(&(failed_count, last_attempt)) = attempts.get(&client_ip)
+            && failed_count >= state.max_attempts
+            && last_attempt.elapsed() < LOCKOUT_TIME
+        {
+            let remaining = LOCKOUT_TIME.saturating_sub(last_attempt.elapsed());
+            let minutes = remaining.as_secs().div_ceil(60);
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(VerifyPinResponse {
+                    valid: false,
+                    error: Some(format!(
+                        "Too many attempts. Please try again in {} minutes.",
+                        minutes
+                    )),
+                    attempts_left: Some(0),
+                    locked: Some(true),
+                    lockout_minutes: Some(minutes),
+                }),
+            )
+                .into_response();
         }
     }
 
@@ -144,7 +145,11 @@ pub async fn verify_pin(
         attempts.remove(&client_ip);
 
         let session_id = crate::auth::generate_session_id();
-        state.active_sessions.write().await.insert(session_id.clone());
+        state
+            .active_sessions
+            .write()
+            .await
+            .insert(session_id.clone());
 
         let is_secure = headers
             .get("x-forwarded-proto")
