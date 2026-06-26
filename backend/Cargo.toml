@@ -10,6 +10,7 @@ description = "Axum backend service for Todo."
 readme = "../README.md"
 
 [dependencies]
+ubermetroid-shared = { path = "../frontend/Assets/shared-assets/shared-rust" }
 shared = { path = "../shared" }
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
