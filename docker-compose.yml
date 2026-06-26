@@ -1,6 +1,5 @@
 services:
   todo:
-    build: .
     image: ubermetroid/todo:latest
     container_name: todo
     restart: unless-stopped
