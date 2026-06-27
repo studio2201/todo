@@ -1,19 +1,26 @@
+//! `todo` backend entrypoint.
+//!
+//! Configuration is parsed by `shared_assets::server::ServerConfig`,
+//! CORS is `shared_assets::middleware::cors_layer`, and security
+//! headers + HSTS + title injection come from `shared_assets::middleware`.
+//! The remaining middlewares (`auth_middleware`, `rate_limit_middleware`,
+//! `origin_validation_middleware`) are todo-specific and live in
+//! `middleware.rs`.
+
 use axum::{
     Router, middleware as axum_middleware,
     routing::{get, post},
 };
 use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
-use tower_http::{
-    cors::CorsLayer,
-    services::{ServeDir, ServeFile},
-};
+use tower_http::services::{ServeDir, ServeFile};
 
 mod auth;
 mod handlers;
 mod middleware;
 mod state;
 mod static_files;
+mod types;
 #[cfg(test)]
 mod tests;
 
@@ -32,6 +39,7 @@ use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
+    // ───── tracing setup ─────
     let log_dir = std::env::var("LOG_DIR").ok().or_else(|| {
         let data_dir = std::path::Path::new("/app/data");
         if data_dir.is_dir() {
@@ -86,128 +94,71 @@ async fn main() {
         .with(file_layer_app)
         .init();
 
-    dotenvy::from_path("/app/data/.env").ok();
-    dotenvy::dotenv().ok();
+    // ───── config ─────
+    let server_config = Arc::new(shared_assets::server::ServerConfig::from_env("TODO"));
 
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "4403".to_string())
-        .parse::<u16>()
-        .unwrap_or(4403);
-
-    let pin = std::env::var("TODO_PIN")
-        .or_else(|_| std::env::var("ADAM_PIN"))
-        .or_else(|_| std::env::var("PIN"))
-        .ok()
-        .filter(|p| {
-            let trimmed = p.trim();
-            trimmed.len() >= 4 && trimmed.len() <= 64
-        });
-    let site_title = std::env::var("TODO_TITLE")
-        .or_else(|_| std::env::var("TODO_SITE_TITLE"))
-        .or_else(|_| std::env::var("ADAM_TITLE"))
-        .or_else(|_| std::env::var("ADAM_SITE_TITLE"))
-        .or_else(|_| std::env::var("SITE_TITLE"))
-        .unwrap_or_else(|_| "Todo".to_string());
-    let single_list = std::env::var("SINGLE_LIST")
-        .map(|val| val == "true")
-        .unwrap_or(false);
-    let allowed_origins = std::env::var("ALLOWED_ORIGINS").unwrap_or_else(|_| "*".to_string());
-    let node_env = std::env::var("NODE_ENV").unwrap_or_else(|_| "production".to_string());
-    let is_production = node_env == "production";
+    let port = server_config.port;
+    let allowed_origins = server_config.allowed_origins.clone();
+    let is_production = std::env::var("NODE_ENV").unwrap_or_else(|_| "production".to_string())
+        == "production";
 
     let data_dir = "data";
-    let data_file = format!("{}/todos.json", data_dir);
+    let data_file = format!("{data_dir}/todos.json");
 
     if let Err(e) = std::fs::create_dir_all(data_dir) {
-        eprintln!("Failed to create data directory: {}", e);
+        eprintln!("Failed to create data directory: {e}");
     }
-
     if !std::path::Path::new(&data_file).exists()
         && let Err(e) = std::fs::write(&data_file, "{}")
     {
-        eprintln!("Failed to initialize todos file: {}", e);
+        eprintln!("Failed to initialize todos file: {e}");
     }
-
     run_todo_migrations(&data_file);
 
     let asset_manifest = build_asset_manifest();
 
-    let max_attempts = std::env::var("MAX_ATTEMPTS")
-        .ok()
-        .and_then(|val| val.parse().ok())
-        .unwrap_or(5);
-
-    let enable_translation = std::env::var("ENABLE_TRANSLATION")
-        .map(|v| v == "true" || v == "on")
-        .unwrap_or(false);
-
-    let enable_themes = std::env::var("ENABLE_THEMES")
-        .map(|v| v == "true" || v == "on")
-        .unwrap_or(false);
-
-    let enable_print = std::env::var("ENABLE_PRINT")
-        .map(|v| v == "true" || v == "on")
-        .unwrap_or(false);
-
-    let show_version = std::env::var("SHOW_VERSION")
-        .map(|v| v != "false" && v != "off")
-        .unwrap_or(true);
-
-    let show_github = std::env::var("SHOW_GITHUB")
-        .map(|v| v != "false" && v != "off")
-        .unwrap_or(true);
-
+    // ───── build state ─────
     let app_state = Arc::new(AppState {
-        pin,
-        site_title,
-        single_list,
+        pin: server_config.pin.clone(),
+        site_title: server_config.site_title.clone(),
+        single_list: std::env::var("SINGLE_LIST")
+            .map(|v| v == "true")
+            .unwrap_or(false),
         allowed_origins: allowed_origins.clone(),
         is_production,
         data_file,
         asset_manifest,
-        max_attempts,
-        enable_translation,
-        enable_themes,
-        enable_print,
-        show_version,
-        show_github,
-        login_attempts: RwLock::new(HashMap::new()),
+        max_attempts: server_config.max_attempts as usize,
+        lockout_duration: server_config.lockout_duration(),
+        enable_translation: server_config.enable_translation,
+        enable_themes: server_config.enable_themes,
+        enable_print: server_config.enable_print,
+        show_version: server_config.show_version,
+        show_github: server_config.show_github,
+        trust_proxy: server_config.trust_proxy,
+        trusted_proxies: server_config.trusted_proxies.clone(),
+        cookie_max_age_hours: server_config.cookie_max_age_hours,
         active_sessions: RwLock::new(std::collections::HashSet::new()),
         rate_limiter: RwLock::new(HashMap::new()),
     });
 
+    // ───── background cleanup ─────
+    // PIN-attempt entries are now stored process-globally by
+    // shared_assets::auth::attempts and are cleaned up lazily on read
+    // (entries older than lockout_duration are dropped). We only need
+    // to clean up the per-IP rate-limit map here.
     let clean_state = app_state.clone();
     tokio::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(60)).await;
-            {
-                let mut attempts = clean_state.login_attempts.write().await;
-                attempts
-                    .retain(|_, (_, last_time)| last_time.elapsed() < Duration::from_secs(15 * 60));
-            }
             clean_state.clean_old_rate_limits().await;
         }
     });
 
-    let cors = CorsLayer::new()
-        .allow_methods(vec![axum::http::Method::GET, axum::http::Method::POST])
-        .allow_headers(vec![
-            axum::http::header::CONTENT_TYPE,
-            axum::http::header::HeaderName::from_static("x-pin"),
-        ])
-        .allow_credentials(true);
-
-    let cors = if allowed_origins == "*" {
-        cors.allow_origin(tower_http::cors::AllowOrigin::mirror_request())
-    } else {
-        let mut origins = Vec::new();
-        for origin in allowed_origins.split(',') {
-            if let Ok(parsed) = origin.trim().parse() {
-                origins.push(parsed);
-            }
-        }
-        cors.allow_origin(origins)
-    };
+    // ───── middleware layers ─────
+    let cors = shared_assets::middleware::cors_layer(&server_config);
+    let hsts_state = shared_assets::middleware::HstsState(server_config.clone());
+    let title_state = shared_assets::middleware::TitleState(server_config.clone());
 
     let protected_routes = Router::new()
         .route("/todos", get(get_todos).post(save_todos))
@@ -245,13 +196,20 @@ async fn main() {
             ServeDir::new("frontend/dist").fallback(ServeFile::new("frontend/dist/index.html")),
         )
         .layer(tower_http::trace::TraceLayer::new_for_http())
-        .layer(cors)
+        // security headers from shared-assets (X-Frame-Options, CSP, etc.)
         .layer(axum_middleware::from_fn(security_headers_middleware))
+        // HSTS only when HTTPS is in use
+        .layer(axum_middleware::from_fn_with_state(hsts_state, shared_assets::middleware::hsts_layer))
+        // title injection (replaces {{SITE_TITLE}} in HTML)
+        .layer(axum_middleware::from_fn_with_state(title_state, shared_assets::middleware::title_injection_layer))
+        // CORS last so it can short-circuit OPTIONS preflights
+        .layer(cors)
         .with_state(app_state.clone());
 
+    // ───── bind & serve ─────
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    println!("Todo server running at http://localhost:{}", port);
+    println!("Todo server running at http://localhost:{port}");
 
     axum::serve(
         listener,

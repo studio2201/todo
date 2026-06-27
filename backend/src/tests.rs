@@ -1,138 +1,339 @@
+//! End-to-end tests for the public handlers.
+//!
+//! These tests use the new [`AppState`] shape (after the shared-assets
+//! migration) and the [`types`] module instead of the deleted
+//! `shared` crate's auth/config types.
+
 use super::*;
+use crate::auth::{build_session_cookie_header, generate_random_id, generate_session_id};
+use crate::state::AppState;
+use crate::types::TodoState;
+use shared::{
+    PinRequiredResponse, SiteConfig, VerifyPinRequest, VerifyPinResponse,
+};
 use axum::{
     Json,
     extract::{ConnectInfo, State},
     http::{HeaderMap, StatusCode},
 };
 use axum_extra::extract::cookie::CookieJar;
-use shared::VerifyPinRequest;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[test]
-fn test_secure_compare() {
-    assert!(auth::secure_compare("1234", "1234"));
-    assert!(!auth::secure_compare("1234", "1235"));
-    assert!(!auth::secure_compare("1234", "12345"));
-    assert!(!auth::secure_compare("12345", "1234"));
-    assert!(auth::secure_compare("", ""));
-}
-
-#[test]
-fn test_generate_random_id() {
-    let id1 = auth::generate_random_id();
-    let id2 = auth::generate_random_id();
-    assert_eq!(id1.len(), 9);
-    assert_eq!(id2.len(), 9);
-    assert_ne!(id1, id2);
-    for c in id1.chars() {
-        assert!(c.is_ascii_alphanumeric());
-    }
-}
-
-#[tokio::test]
-async fn test_get_config_handler() {
-    let state = Arc::new(state::AppState {
-        pin: Some("1234".to_string()),
-        site_title: "TestDo".to_string(),
-        single_list: true,
-        allowed_origins: "*".to_string(),
-        is_production: false,
-        data_file: "test_todos.json".to_string(),
-        asset_manifest: vec![],
-        login_attempts: RwLock::new(HashMap::new()),
-        enable_translation: false,
-        max_attempts: 5,
-        enable_themes: false,
-        enable_print: false,
-        active_sessions: RwLock::new(std::collections::HashSet::new()),
-        rate_limiter: RwLock::new(HashMap::new()),
-    });
-
-    let config = handlers::get_config(State(state)).await;
-    assert_eq!(config.site_title, "TestDo");
-    assert!(config.single_list);
-}
-
-#[tokio::test]
-async fn test_get_pin_required_handler() {
-    let state = Arc::new(state::AppState {
-        pin: Some("1234".to_string()),
-        site_title: "TestDo".to_string(),
+/// Helper: build a fully-populated `AppState` for tests.
+fn test_state() -> Arc<AppState> {
+    Arc::new(AppState {
+        pin: Some("12345678".into()),
+        site_title: "TestDo".into(),
         single_list: false,
-        allowed_origins: "*".to_string(),
+        allowed_origins: "*".into(),
         is_production: false,
-        data_file: "test_todos.json".to_string(),
+        data_file: "test_todos.json".into(),
         asset_manifest: vec![],
-        login_attempts: RwLock::new(HashMap::new()),
-        enable_translation: false,
         max_attempts: 5,
+        lockout_duration: std::time::Duration::from_secs(900),
+        enable_translation: false,
         enable_themes: false,
         enable_print: false,
+        show_version: true,
+        show_github: true,
+        trust_proxy: false,
+        trusted_proxies: vec![],
+        cookie_max_age_hours: 24,
         active_sessions: RwLock::new(std::collections::HashSet::new()),
         rate_limiter: RwLock::new(HashMap::new()),
-    });
+    })
+}
 
+// ──────────────────────────── domain types ─────────────────────────────
+
+#[test]
+fn todo_state_envelope_roundtrip() {
+    let mut lists = HashMap::new();
+    lists.insert(
+        "inbox".into(),
+        vec![shared::TodoItem {
+            id: "abc123".into(),
+            text: "buy milk".into(),
+            completed: false,
+        }],
+    );
+    let state = TodoState {
+        version: 7,
+        lists,
+    };
+    let json = serde_json::to_string(&state).unwrap();
+    let back: TodoState = serde_json::from_str(&json).unwrap();
+    assert_eq!(state, back);
+}
+
+#[test]
+fn todo_state_migrates_legacy_format() {
+    let legacy = r#"{"inbox":[{"id":"a","text":"x","completed":false}]}"#;
+    let (state, needs_rewrite) = TodoState::parse_with_migration(legacy).unwrap();
+    assert_eq!(state.version, 1);
+    assert!(needs_rewrite);
+    assert_eq!(state.lists.len(), 1);
+}
+
+#[test]
+fn todo_state_rejects_garbage() {
+    assert!(TodoState::parse_with_migration("not json").is_err());
+}
+
+// ──────────────────────────── cookie helper ────────────────────────────
+
+#[test]
+fn session_cookie_has_security_attrs() {
+    let h = build_session_cookie_header("deadbeef", 24, false);
+    assert!(h.starts_with("TODO_PIN=deadbeef"));
+    assert!(h.contains("HttpOnly"));
+    assert!(h.contains("SameSite=Strict"));
+    assert!(h.contains("Path=/"));
+    assert!(h.contains("Max-Age=86400"));
+    assert!(!h.contains("; Secure"));
+}
+
+#[test]
+fn session_cookie_includes_secure_when_https() {
+    let h = build_session_cookie_header("x", 1, true);
+    assert!(h.contains("; Secure"));
+    assert!(h.contains("Max-Age=3600"));
+}
+
+// ─────────────────────────────── ids ───────────────────────────────────
+
+#[test]
+fn session_id_format() {
+    let id = generate_session_id();
+    assert_eq!(id.len(), 32);
+    assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+}
+
+#[test]
+fn random_id_format() {
+    let id = generate_random_id();
+    assert_eq!(id.len(), 9);
+    assert!(id.chars().all(|c| c.is_ascii_alphanumeric()));
+}
+
+#[test]
+fn random_ids_are_unique() {
+    let a = generate_random_id();
+    let b = generate_random_id();
+    assert_ne!(a, b);
+}
+
+// ──────────────────────────── handlers ─────────────────────────────────
+
+#[tokio::test]
+async fn get_config_returns_state_values() {
+    let state = test_state();
+    let config: SiteConfig = handlers::get_config(State(state)).await.0;
+    assert_eq!(config.site_title, "TestDo");
+    assert!(!config.single_list);
+    assert!(config.show_version);
+    assert!(config.show_github);
+}
+
+#[tokio::test]
+async fn get_pin_required_reports_correct_values() {
+    let state = test_state();
     let connect_info = ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345)));
     let headers = HeaderMap::new();
-
-    let res = handlers::get_pin_required(State(state.clone()), connect_info, headers).await;
+    let res: PinRequiredResponse = handlers::get_pin_required(State(state), connect_info, headers)
+        .await
+        .0;
     assert!(res.required);
-    assert_eq!(res.length, 4);
+    assert_eq!(res.length, 8);
     assert!(!res.locked);
     assert_eq!(res.attempts_left, 5);
 }
 
 #[tokio::test]
-async fn test_verify_pin_handler() {
-    let state = Arc::new(state::AppState {
-        pin: Some("1234".to_string()),
-        site_title: "TestDo".to_string(),
-        single_list: false,
-        allowed_origins: "*".to_string(),
-        is_production: false,
-        data_file: "test_todos.json".to_string(),
-        asset_manifest: vec![],
-        login_attempts: RwLock::new(HashMap::new()),
-        enable_translation: false,
-        max_attempts: 5,
-        enable_themes: false,
-        enable_print: false,
-        active_sessions: RwLock::new(std::collections::HashSet::new()),
-        rate_limiter: RwLock::new(HashMap::new()),
-    });
-
-    let connect_info = ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 12345)));
+async fn verify_pin_correct_returns_ok() {
+    let state = test_state();
+    let connect_info = ConnectInfo(SocketAddr::from(([10, 0, 0, 1], 12345)));
     let headers = HeaderMap::new();
     let jar = CookieJar::new();
-
-    // Verify correct PIN
     let req = VerifyPinRequest {
-        pin: "1234".to_string(),
+        pin: "12345678".into(),
     };
-    let res = handlers::verify_pin(
-        State(state.clone()),
-        connect_info,
-        headers.clone(),
-        jar.clone(),
-        Json(req),
-    )
-    .await;
+    let res = handlers::verify_pin(State(state), connect_info, headers, jar, Json(req)).await;
     assert_eq!(res.status(), StatusCode::OK);
+}
 
-    // Verify incorrect PIN
-    let req_wrong = VerifyPinRequest {
-        pin: "5678".to_string(),
+#[tokio::test]
+async fn verify_pin_wrong_returns_401() {
+    let state = test_state();
+    let connect_info = ConnectInfo(SocketAddr::from(([10, 0, 0, 2], 12345)));
+    let headers = HeaderMap::new();
+    let jar = CookieJar::new();
+    let req = VerifyPinRequest {
+        pin: "87654321".into(),
     };
-    let res_wrong = handlers::verify_pin(
+    let res = handlers::verify_pin(State(state), connect_info, headers, jar, Json(req)).await;
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn verify_pin_short_returns_400_without_incrementing() {
+    let state = test_state();
+    let connect_info = ConnectInfo(SocketAddr::from(([10, 0, 0, 3], 12345)));
+    let headers = HeaderMap::new();
+    let jar = CookieJar::new();
+    let req = VerifyPinRequest { pin: "1".into() };
+    let res = handlers::verify_pin(
         State(state.clone()),
         connect_info,
         headers,
         jar,
-        Json(req_wrong),
+        Json(req),
     )
     .await;
-    assert_eq!(res_wrong.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+
+    // Counter for this IP must remain at 0 — format errors are not
+    // brute-force attempts.
+    let left = shared_assets::auth::attempts_left(
+        "10.0.0.3",
+        state.max_attempts as u32,
+        state.lockout_duration,
+    );
+    assert_eq!(left, 5, "format error must not consume an attempt");
+}
+
+#[tokio::test]
+async fn verify_pin_lockout_after_max_attempts() {
+    let state = test_state();
+    let connect_info = ConnectInfo(SocketAddr::from(([10, 0, 0, 4], 12345)));
+    let headers = HeaderMap::new();
+    for i in 0..5 {
+        let jar = CookieJar::new();
+        let req = VerifyPinRequest {
+            pin: format!("wrong{i}"),
+        };
+        let _ = handlers::verify_pin(
+            State(state.clone()),
+            connect_info,
+            headers.clone(),
+            jar,
+            Json(req),
+        )
+        .await;
+    }
+    // 6th attempt must be locked out.
+    let jar = CookieJar::new();
+    let req = VerifyPinRequest {
+        pin: "12345678".into(),
+    };
+    let res = handlers::verify_pin(
+        State(state.clone()),
+        connect_info,
+        headers,
+        jar,
+        Json(req),
+    )
+    .await;
+    assert_eq!(res.status(), StatusCode::TOO_MANY_REQUESTS);
+}
+
+// ────────────────────────── auth middleware ────────────────────────────
+
+#[tokio::test]
+async fn auth_middleware_blocks_unauthenticated() {
+    use crate::middleware::auth_middleware;
+    let state = test_state();
+    let cookie_jar = CookieJar::new();
+    let headers = HeaderMap::new();
+    let request = axum::http::Request::builder()
+        .uri("/")
+        .body(axum::body::Body::empty())
+        .unwrap();
+    let res = auth_middleware(
+        State(state),
+        cookie_jar,
+        headers,
+        request,
+        axum::middleware::Next::new(),
+    )
+    .await;
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn auth_middleware_allows_when_pin_disabled() {
+    use crate::middleware::auth_middleware;
+    // Build a state with no PIN.
+    let state = Arc::new(AppState {
+        pin: None,
+        ..(*test_state())
+    });
+    let cookie_jar = CookieJar::new();
+    let headers = HeaderMap::new();
+    let request = axum::http::Request::builder()
+        .uri("/")
+        .body(axum::body::Body::empty())
+        .unwrap();
+    let res = auth_middleware(
+        State(state),
+        cookie_jar,
+        headers,
+        request,
+        axum::middleware::Next::new(),
+    )
+    .await;
+    // In public mode (no PIN), the middleware passes through. Since
+    // Next::new() has no inner service, it returns a default empty
+    // response — but the important thing is that the status is NOT 401.
+    assert_ne!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+// ─────────────────────────── state helpers ─────────────────────────────
+
+#[tokio::test]
+async fn rate_limit_allows_under_threshold() {
+    let state = test_state();
+    for _ in 0..50 {
+        assert!(state.check_rate_limit("5.5.5.5").await);
+    }
+}
+
+#[tokio::test]
+async fn rate_limit_blocks_over_threshold() {
+    let state = test_state();
+    for _ in 0..100 {
+        assert!(state.check_rate_limit("5.5.5.6").await);
+    }
+    assert!(!state.check_rate_limit("5.5.5.6").await);
+}
+
+#[test]
+fn client_ip_no_proxy_returns_socket() {
+    let socket: SocketAddr = "10.0.0.1:4403".parse().unwrap();
+    let headers = HeaderMap::new();
+    let ip = crate::state::get_client_ip(&headers, socket, false, &[]);
+    assert_eq!(ip, "10.0.0.1");
+}
+
+#[test]
+fn client_ip_proxy_without_list_ignores_xff() {
+    let socket: SocketAddr = "10.0.0.1:4403".parse().unwrap();
+    let mut headers = HeaderMap::new();
+    headers.insert("x-forwarded-for", "1.2.3.4".parse().unwrap());
+    let ip = crate::state::get_client_ip(&headers, socket, true, &[]);
+    // Fail-safe: trust_proxy=true without allowlist → use socket IP.
+    assert_eq!(ip, "10.0.0.1");
+}
+
+#[test]
+fn client_ip_proxy_with_allowlist_honors_xff() {
+    let socket: SocketAddr = "10.0.0.1:4403".parse().unwrap();
+    let mut headers = HeaderMap::new();
+    headers.insert("x-forwarded-for", "1.2.3.4".parse().unwrap());
+    let trusted: ipnet::IpNet = "10.0.0.0/8".parse().unwrap();
+    let ip = crate::state::get_client_ip(&headers, socket, true, &[trusted]);
+    assert_eq!(ip, "1.2.3.4");
 }

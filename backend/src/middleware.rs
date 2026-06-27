@@ -1,7 +1,14 @@
+//! Axum middleware: thin wrappers over `shared_assets::middleware`.
+//!
+//! Every layer here is either a one-line re-export or a thin glue layer
+//! that adapts to todo's per-route state. All actual security policy
+//! lives in `shared_assets` so that beam / pad / todo / trace / grid
+//! behave identically.
+
 use axum::{
     Json,
-    extract::{ConnectInfo, State},
-    http::{HeaderMap, Request, StatusCode},
+    extract::{ConnectInfo, Request, State},
+    http::{HeaderMap, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
@@ -11,6 +18,10 @@ use std::net::SocketAddr;
 use crate::auth::secure_compare;
 use crate::state::{AppState, SharedState, get_client_ip};
 
+// ─────────────────────────── authentication ────────────────────────────
+
+/// Returns `true` if the request is from an authenticated session or
+/// presents a valid `x-pin` header.
 pub async fn is_authenticated(
     state: &AppState,
     cookie_jar: &CookieJar,
@@ -18,22 +29,20 @@ pub async fn is_authenticated(
 ) -> bool {
     let pin_env = match &state.pin {
         Some(p) => p,
-        None => return true,
+        None => return true, // public mode
     };
 
-    let cookie_pin = cookie_jar
-        .get("TODO_PIN")
-        .or_else(|| cookie_jar.get("ADAM_PIN"))
-        .map(|c| c.value());
+    let cookie_pin = cookie_jar.get("TODO_PIN").map(|c| c.value());
     let header_pin = headers.get("x-pin").and_then(|h| h.to_str().ok());
 
     match (cookie_pin, header_pin) {
         (Some(cookie), _) => state.active_sessions.read().await.contains(cookie),
-        (None, Some(hdr)) => secure_compare(hdr, pin_env),
+        (None, Some(hdr)) => secure_compare(hdr.as_bytes(), pin_env.as_bytes()),
         (None, None) => false,
     }
 }
 
+/// Gate protected routes. On miss, returns `401 {"error": "Invalid PIN"}`.
 pub async fn auth_middleware(
     State(state): State<SharedState>,
     cookie_jar: CookieJar,
@@ -52,6 +61,9 @@ pub async fn auth_middleware(
     }
 }
 
+// ────────────────────────────── rate limit ──────────────────────────────
+
+/// Per-IP sliding-window rate limit. Delegates to `AppState::check_rate_limit`.
 pub async fn rate_limit_middleware(
     State(state): State<SharedState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -59,7 +71,7 @@ pub async fn rate_limit_middleware(
     request: Request<axum::body::Body>,
     next: Next,
 ) -> Response {
-    let ip = get_client_ip(&ConnectInfo(addr), &headers);
+    let ip = get_client_ip(&headers, addr, state.trust_proxy, &state.trusted_proxies);
 
     if !state.check_rate_limit(&ip).await {
         let body = serde_json::json!({
@@ -73,6 +85,11 @@ pub async fn rate_limit_middleware(
     next.run(request).await
 }
 
+// ──────────────────────────── origin check ─────────────────────────────
+
+/// Reject cross-origin requests in production mode when an allowlist is
+/// configured. In development, or when `ALLOWED_ORIGINS=*`, requests are
+/// allowed unconditionally.
 pub async fn origin_validation_middleware(
     State(state): State<SharedState>,
     headers: HeaderMap,
@@ -90,12 +107,10 @@ pub async fn origin_validation_middleware(
 
     if let Some(origin_str) = origin {
         let origin_norm = extract_origin(origin_str);
-
         let allowed = state
             .allowed_origins
             .split(',')
             .any(|o| extract_origin(o.trim()) == origin_norm);
-
         if allowed {
             next.run(request).await
         } else {
@@ -120,31 +135,36 @@ fn extract_origin(url: &str) -> &str {
     }
 }
 
-pub async fn security_headers_middleware(
-    request: Request<axum::body::Body>,
-    next: Next,
-) -> Response {
-    let mut response = next.run(request).await;
-    let headers = response.headers_mut();
+// ────────────────────── shared-assets layer re-exports ─────────────────
+//
+// These two functions match the `(Request, Next) -> Response` shape
+// expected by `axum::middleware::from_fn`, so they can be installed
+// without a `State` extractor. HSTS and title-injection need config, so
+// they are installed in `main.rs` via `from_fn_with_state` directly —
+// not wrapped here.
 
-    headers.insert(
-        "X-Frame-Options",
-        axum::http::header::HeaderValue::from_static("DENY"),
-    );
-    headers.insert(
-        "X-Content-Type-Options",
-        axum::http::header::HeaderValue::from_static("nosniff"),
-    );
-    headers.insert(
-        "Referrer-Policy",
-        axum::http::header::HeaderValue::from_static("strict-origin-when-cross-origin"),
-    );
-    headers.insert(
-        "Content-Security-Policy", 
-        axum::http::header::HeaderValue::from_static(
-            "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: blob: https:; connect-src 'self' ws: wss: http: https:; font-src 'self'; manifest-src 'self';"
-        )
-    );
+/// Re-export `shared_assets::middleware::security_headers_layer` for use
+/// with `axum::middleware::from_fn(security_headers_middleware)`.
+pub async fn security_headers_middleware(request: Request, next: Next) -> Response {
+    shared_assets::middleware::security_headers_layer(request, next).await
+}
 
-    response
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_origin_strips_path() {
+        assert_eq!(extract_origin("https://example.com/"), "https://example.com");
+        assert_eq!(
+            extract_origin("https://example.com/path?q=1"),
+            "https://example.com"
+        );
+        assert_eq!(extract_origin("example.com"), "example.com");
+    }
+
+    #[test]
+    fn extract_origin_handles_no_scheme() {
+        assert_eq!(extract_origin("localhost:4403"), "localhost:4403");
+    }
 }

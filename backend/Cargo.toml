@@ -23,4 +23,9 @@ dotenvy = "0.15"
 sha2 = "0.11"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# Mirror of shared-assets's deps so we can call `constant_time_eq::constant_time_eq`
+# and `ipnet::IpNet` directly from this crate. Pulled in transitively by
+# shared-assets but declared explicitly per Rust convention.
+constant_time_eq = "0.3"
+ipnet = "2.9"
 
