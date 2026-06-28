@@ -1,8 +1,8 @@
 use crate::api;
 use crate::i18n::{TransKey, use_i18n};
-use crate::todo_form::TodoForm;
-use crate::todo_items_list::TodoItemsList;
-use crate::todo_list_handlers;
+use crate::components::todo_form::TodoForm;
+use crate::components::todo_items_list::TodoItemsList;
+use crate::components::todo_list_handlers;
 use crate::types::ToastType;
 use shared::{SiteConfig, TodoLists};
 use web_sys::MouseEvent;

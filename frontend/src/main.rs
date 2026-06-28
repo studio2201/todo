@@ -7,17 +7,10 @@
 
 mod api;
 mod app;
-mod footer;
-mod header;
+mod components;
 mod i18n;
-mod login;
 mod storage;
 mod theme;
-mod todo_form;
-mod todo_item;
-mod todo_items_list;
-mod todo_list;
-mod todo_list_handlers;
 mod types;
 
 fn main() {

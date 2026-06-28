@@ -1,4 +1,4 @@
-use crate::todo_item::TodoItemComponent;
+use crate::components::todo_item::TodoItemComponent;
 use shared::TodoItem;
 use yew::prelude::*;
 

@@ -1,6 +1,6 @@
-use crate::header::Header;
-use crate::login::Login;
-use crate::todo_list::TodoList;
+use crate::components::header::Header;
+use crate::components::pin::Login;
+use crate::components::todo_list::TodoList;
 use crate::types::ToastType;
 use shared::{PinRequiredResponse, SiteConfig, TodoLists};
 use shared_assets::i18n::Language;
@@ -110,7 +110,7 @@ pub fn render_app(
                     }
                 }
             </div>
-            <crate::footer::Footer {show_version} {version} {show_github} {version_url}>
+            <crate::components::footer::Footer {show_version} {version} {show_github} {version_url}>
                 {
                     if let Some((msg, cls)) = &active_notification {
                         html! { <div class={format!("footer-status-text {}", cls)}>{ msg }</div> }
@@ -118,7 +118,7 @@ pub fn render_app(
                         html! { <div class="footer-status-text success">{"Ready"}</div> }
                     }
                 }
-            </crate::footer::Footer>
+            </crate::components::footer::Footer>
         </ContextProvider<crate::i18n::I18nContext>>
     }
 }
