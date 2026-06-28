@@ -8,7 +8,7 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
 *   **Dynamic Themes**: Dynamic theme options.
 *   **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
@@ -20,7 +20,7 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 
 ---
 
-## 📦 Container Registry
+## Container Registry
 
 The Docker image is built with **Nix** (no Alpine, fully reproducible) and published to Docker Hub:
 
@@ -28,7 +28,7 @@ The Docker image is built with **Nix** (no Alpine, fully reproducible) and publi
 
 ---
 
-## 🐳 Container Installation
+## Container Installation
 
 1. Create a `docker-compose.yml` file:
 
@@ -82,7 +82,7 @@ nix develop
 
 ---
 
-## 📋 Configuration Options
+## Configuration Options
 
 Configure these settings inside your Docker Compose environment or container environment variables:
 
