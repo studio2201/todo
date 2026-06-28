@@ -8,51 +8,10 @@ use axum_extra::extract::cookie::{Cookie, CookieJar};
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use super::{PIN_MAX_LEN, PIN_MIN_LEN};
+use super::super::{PIN_MAX_LEN, PIN_MIN_LEN};
 use crate::auth::{build_session_cookie_header, secure_compare};
 use crate::state::{SharedState, get_client_ip};
-use shared::{PinRequiredResponse, VerifyPinRequest, VerifyPinResponse};
-
-pub async fn get_pin_required(
-    State(state): State<SharedState>,
-    connect_info: ConnectInfo<SocketAddr>,
-    headers: HeaderMap,
-) -> Json<PinRequiredResponse> {
-    let client_ip = get_client_ip(
-        &headers,
-        connect_info.0,
-        state.trust_proxy,
-        &state.trusted_proxies,
-    );
-    let max_attempts = state.max_attempts as u32;
-
-    let locked =
-        shared_assets::auth::is_locked_out(&client_ip, max_attempts, state.lockout_duration);
-    let remaining_secs =
-        shared_assets::auth::lockout_remaining_secs(&client_ip, state.lockout_duration);
-    let attempts_left =
-        shared_assets::auth::attempts_left(&client_ip, max_attempts, state.lockout_duration)
-            as usize;
-
-    let lockout_minutes = if locked {
-        remaining_secs.div_ceil(60)
-    } else {
-        0
-    };
-
-    Json(PinRequiredResponse {
-        required: state.pin.is_some(),
-        length: state.pin.as_ref().map(|p| p.len()).unwrap_or(PIN_MIN_LEN),
-        locked,
-        attempts_left,
-        lockout_minutes,
-        enable_translation: state.enable_translation,
-        enable_themes: state.enable_themes,
-        enable_print: state.enable_print,
-        show_version: state.show_version,
-        show_github: state.show_github,
-    })
-}
+use shared::{VerifyPinRequest, VerifyPinResponse};
 
 pub async fn verify_pin(
     State(state): State<SharedState>,
@@ -204,16 +163,4 @@ pub async fn verify_pin(
         )
             .into_response()
     }
-}
-
-pub async fn logout(cookie_jar: CookieJar, State(state): State<SharedState>) -> impl IntoResponse {
-    if let Some(cookie) = cookie_jar.get("TODO_PIN") {
-        state.active_sessions.write().await.remove(cookie.value());
-    }
-    let cookie = Cookie::build(("TODO_PIN", ""))
-        .path("/")
-        .http_only(true)
-        .same_site(axum_extra::extract::cookie::SameSite::Strict)
-        .build();
-    (StatusCode::OK, cookie_jar.remove(cookie))
 }
