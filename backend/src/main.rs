@@ -15,23 +15,22 @@ use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::sync::RwLock;
 use tower_http::services::{ServeDir, ServeFile};
 
-mod auth;
-mod middleware;
+pub mod middleware;
 mod routes;
 mod state;
-mod static_files;
 #[cfg(test)]
 mod tests;
 mod types;
 
-use auth::run_todo_migrations;
-use middleware::{
+pub use middleware::{auth, custom, static_files};
+use middleware::auth::run_todo_migrations;
+use middleware::custom::{
     auth_middleware, origin_validation_middleware, rate_limit_middleware,
     security_headers_middleware,
 };
 use routes::{get_config, get_pin_required, get_todos, logout, save_todos, verify_pin};
 use state::AppState;
-use static_files::{
+use middleware::static_files::{
     build_asset_manifest, serve_asset_manifest, serve_favicon, serve_favicon_png, serve_health,
     serve_index, serve_manifest, serve_service_worker,
 };
