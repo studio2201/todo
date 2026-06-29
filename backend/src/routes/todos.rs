@@ -38,7 +38,7 @@ pub async fn get_todos(State(state): State<SharedState>) -> Response {
     .await;
 
     match read_result {
-        Ok(Ok((todo_state, _needs_rewrite))) => Json(todo_state).into_response(),
+        Ok(Ok((todo_state, _needs_rewrite))) => Json(todo_state.lists).into_response(),
         Ok(Err(msg)) => (
             StatusCode::SERVICE_UNAVAILABLE,
             format!(
@@ -56,19 +56,29 @@ pub async fn get_todos(State(state): State<SharedState>) -> Response {
 
 /// Save the todos file with optimistic-concurrency control.
 ///
-/// Body shape:
-/// ```json
-/// { "version": N, "lists": { "list_name": [...] } }
-/// ```
-///
-/// If `version` is omitted (legacy clients), defaults to `0`, which
-/// means concurrent overwrites are possible — but the response still
-/// returns the new version so clients can opt in to versioning.
+/// Body shape can be either the versioned `TodoState` envelope, or the
+/// raw legacy `TodoLists` map.
 pub async fn save_todos(
     State(state): State<SharedState>,
-    Json(payload): Json<TodoState>,
+    Json(value): Json<serde_json::Value>,
 ) -> Response {
     let data_file = state.data_file.clone();
+
+    // Parse payload as either TodoState or TodoLists
+    let (lists, version) = if let Some(lists_val) = value.get("lists") {
+        let lists: shared_core::types::TodoLists = match serde_json::from_value(lists_val.clone()) {
+            Ok(l) => l,
+            Err(e) => return (StatusCode::BAD_REQUEST, format!("Invalid lists field: {e}")).into_response(),
+        };
+        let version = value.get("version").and_then(|v| v.as_u64()).unwrap_or(0);
+        (lists, version)
+    } else {
+        let lists: shared_core::types::TodoLists = match serde_json::from_value(value) {
+            Ok(l) => l,
+            Err(e) => return (StatusCode::BAD_REQUEST, format!("Invalid TodoLists payload: {e}")).into_response(),
+        };
+        (lists, 0)
+    };
 
     // 1. Read the current file to compare versions.
     let current_version: u64 = match tokio::fs::read_to_string(&data_file).await {
@@ -81,13 +91,13 @@ pub async fn save_todos(
 
     // 2. Check optimistic-concurrency. A save is accepted only if the
     //    client's observed version matches the current file version.
-    if payload.version != current_version && current_version != 0 {
+    if version != current_version && current_version != 0 {
         return (
             StatusCode::CONFLICT,
             Json(serde_json::json!({
                 "error": "version_conflict",
                 "current_version": current_version,
-                "your_version": payload.version,
+                "your_version": version,
             })),
         )
             .into_response();
@@ -96,7 +106,7 @@ pub async fn save_todos(
     // 3. Build the new state with version = current + 1.
     let new_state = TodoState {
         version: current_version + 1,
-        lists: payload.lists,
+        lists,
     };
     // Capture the new version *before* moving `new_state` into the
     // blocking write below — we need it for the response.
