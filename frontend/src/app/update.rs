@@ -6,6 +6,8 @@ use shared_core::types::PinRequiredResponse;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use shared_frontend::theme::{Theme, mapping::Scheme};
+use shared_frontend::i18n::strings::{lookup, StringKey};
+use shared_frontend::i18n::Language;
 
 impl App {
     pub fn create_app(ctx: &Context<Self>) -> Self {
@@ -176,16 +178,19 @@ impl App {
                     let _ = html.set_attribute("class", next.name());
                 }
                 self.theme = next.name().to_string();
+                let lang = Language::from_code(self.locale.to_str());
+                ctx.link().send_message(Msg::ShowToast(lookup(StringKey::StatusThemeChanged, lang).to_string(), ToastType::Success));
                 true
             }
 
             Msg::Logout => {
                 let link = ctx.link().clone();
+                let lang = Language::from_code(self.locale.to_str());
                 spawn_local(async move {
                     if matches!(api::logout().await, Ok(true)) {
                         link.send_message(Msg::SetAuthenticated(false));
                         link.send_message(Msg::LoadTodosSuccess(shared::TodoLists::new()));
-                        link.send_message(Msg::ShowToast("Logged out successfully".to_string(), ToastType::Success));
+                        link.send_message(Msg::ShowToast(lookup(StringKey::StatusLogout, lang).to_string(), ToastType::Success));
                     } else {
                         link.send_message(Msg::ShowToast("Failed to log out".to_string(), ToastType::Error));
                     }
@@ -206,12 +211,14 @@ impl App {
                 false
             }
             Msg::PinVerificationResult(data) => {
+                let lang = Language::from_code(self.locale.to_str());
                 if data.valid {
                     self.pin_error = None;
                     self.load_todos_fn(ctx);
-                    ctx.link().send_message(Msg::ShowToast("Authenticated successfully".to_string(), ToastType::Success));
+                    ctx.link().send_message(Msg::ShowToast(lookup(StringKey::StatusPinSuccess, lang).to_string(), ToastType::Success));
                 } else {
                     self.pin_error = data.error.clone();
+                    ctx.link().send_message(Msg::ShowToast(lookup(StringKey::StatusPinFailure, lang).to_string(), ToastType::Error));
                     if let Some(left) = data.attempts_left
                         && let Some(ref mut pr) = self.pin_required
                     {

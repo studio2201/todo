@@ -4,6 +4,7 @@ use crate::components::todo_list::TodoList;
 use crate::types::ToastType;
 use shared_core::i18n::Language;
 use shared_core::types::{PinRequiredResponse, SiteConfig, TodoLists};
+use shared_frontend::i18n::strings::{lookup, StringKey};
 use yew::prelude::*;
 
 #[allow(clippy::too_many_arguments)]
@@ -76,15 +77,25 @@ pub fn render_app(
                 is_authenticated={*authenticated}
                 pin_required={is_pin_required}
                 on_logout={on_logout}
-                print_disabled={disable_print}
+                print_disabled={disable_print || (is_pin_required && !*authenticated)}
                 enable_translation={enable_translation}
                 enable_themes={site_config_fallback.enable_themes}
                 enable_print={enable_print}
-                on_print={Some(Callback::from(|_| {
-                    if let Some(w) = web_sys::window() {
-                        let _ = w.print();
-                    }
-                }))}
+                on_print={
+                    let show_toast = show_toast.clone();
+                    let locale_str = locale.to_str().to_string();
+                    Some(Callback::from(move |_| {
+                        if let Some(w) = web_sys::window() {
+                            let print_res = w.print();
+                            let lang = Language::from_code(&locale_str);
+                            if print_res.is_ok() {
+                                show_toast.emit((lookup(StringKey::StatusPrintSuccess, lang).to_string(), ToastType::Success));
+                            } else {
+                                show_toast.emit((lookup(StringKey::StatusPrintFailure, lang).to_string(), ToastType::Error));
+                            }
+                        }
+                    }))
+                }
                 version={Some(version.clone())}
             />
             <div class="container">

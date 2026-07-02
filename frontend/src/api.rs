@@ -31,9 +31,8 @@ pub async fn verify_pin(pin: &str) -> Result<VerifyPinResponse, gloo_net::Error>
 }
 
 // Saves the entire updated lists structure back to the server
-pub async fn save_todos(todos: &TodoLists) -> Result<bool, gloo_net::Error> {
-    let resp = Request::post("/api/todos").json(todos)?.send().await?;
-    Ok(resp.ok())
+pub async fn save_todos(todos: &TodoLists) -> Result<Response, gloo_net::Error> {
+    Request::post("/api/todos").json(todos)?.send().await
 }
 
 // Submits a POST request to logout and clear authentication cookies
