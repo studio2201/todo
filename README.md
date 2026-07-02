@@ -80,8 +80,6 @@ For development iteration, use the devShell:
 nix develop
 ```
 
----
-
 ## Configuration Options
 
 Configure these settings inside your Docker Compose environment or container environment variables:
