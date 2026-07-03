@@ -139,7 +139,6 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -322,7 +321,6 @@ name = "frontend"
 version = "3.0.19"
 dependencies = [
  "gloo-net 0.7.0",
- "gloo-storage 0.4.0",
  "gloo-timers 0.4.0",
  "js-sys",
  "serde",
@@ -436,7 +434,7 @@ dependencies = [
  "gloo-history",
  "gloo-net 0.5.0",
  "gloo-render",
- "gloo-storage 0.3.0",
+ "gloo-storage",
  "gloo-timers 0.3.0",
  "gloo-utils 0.2.0",
  "gloo-worker",
@@ -567,21 +565,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 1.0.69",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "gloo-storage"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e82ce7d41c6d821640a43726f6ff33c924795cc151b62e5a84d0c988c151c980"
-dependencies = [
- "gloo-utils 0.3.0",
- "js-sys",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -1267,8 +1250,8 @@ dependencies = [
 
 [[package]]
 name = "shared-backend"
-version = "3.0.13"
-source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.17#cc842eaad98f11f669ce103cd9a3e9daad448b41"
+version = "3.0.18"
+source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.18#bb9937356c4b477c617a069e6e5c6201074e1325"
 dependencies = [
  "anyhow",
  "axum",
@@ -1283,12 +1266,13 @@ dependencies = [
  "tokio",
  "tower-http",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
 name = "shared-core"
-version = "3.0.13"
-source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.17#cc842eaad98f11f669ce103cd9a3e9daad448b41"
+version = "3.0.18"
+source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.18#bb9937356c4b477c617a069e6e5c6201074e1325"
 dependencies = [
  "constant_time_eq",
  "serde",
@@ -1296,8 +1280,8 @@ dependencies = [
 
 [[package]]
 name = "shared-frontend"
-version = "3.0.13"
-source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.17#cc842eaad98f11f669ce103cd9a3e9daad448b41"
+version = "3.0.18"
+source = "git+https://github.com/UberMetroid/shared-assets?tag=v3.0.18#bb9937356c4b477c617a069e6e5c6201074e1325"
 dependencies = [
  "js-sys",
  "serde",

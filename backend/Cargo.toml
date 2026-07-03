@@ -10,8 +10,8 @@ description = "Axum backend service for Todo."
 readme = "../README.md"
 
 [dependencies]
-shared-core = { git = "https://github.com/UberMetroid/shared-assets", tag = "v3.0.17" }
-shared-backend = { git = "https://github.com/UberMetroid/shared-assets", tag = "v3.0.17" }
+shared-core = { git = "https://github.com/UberMetroid/shared-assets", tag = "v3.0.18" }
+shared-backend = { git = "https://github.com/UberMetroid/shared-assets", tag = "v3.0.18" }
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["fs", "cors", "trace"] }
@@ -22,7 +22,6 @@ axum-extra = { version = "0.12", features = ["cookie"] }
 dotenvy = "0.15"
 sha2 = "0.11"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Mirror of shared-assets's deps so we can call `constant_time_eq::constant_time_eq`
 # and `ipnet::IpNet` directly from this crate. Pulled in transitively by
 # shared-assets but declared explicitly per Rust convention.

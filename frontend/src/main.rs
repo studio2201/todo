@@ -9,7 +9,6 @@ mod api;
 mod app;
 mod components;
 mod i18n;
-mod storage;
 mod theme;
 mod types;
 

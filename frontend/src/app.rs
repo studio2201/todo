@@ -1,6 +1,6 @@
 pub mod view;
 
-use crate::storage::StorageService;
+use shared_frontend::storage::StorageService;
 use gloo_timers::callback::Timeout;
 use yew::prelude::*;
 use shared_frontend::i18n::strings::{lookup, StringKey};
@@ -35,7 +35,8 @@ pub fn app() -> Html {
     let pin_error = use_state(|| None::<String>);
     let (theme, toggle_theme) = crate::theme::use_theme();
     let locale = use_state(|| {
-        let local_lang = StorageService::get_item("lang", "en");
+        let local_lang = StorageService::new().get_item("lang");
+        let local_lang = if local_lang.is_empty() { "en".to_string() } else { local_lang };
         crate::i18n::Locale::from_str(&local_lang)
     });
 
@@ -64,7 +65,7 @@ pub fn app() -> Html {
     {
         let locale = locale.clone();
         use_effect_with(locale.clone(), move |loc| {
-            StorageService::set_item("lang", loc.to_str());
+            StorageService::new().set_item("lang", loc.to_str());
         });
     }
 
@@ -164,7 +165,7 @@ pub fn app() -> Html {
                     }
                     if !config.enable_themes {
                         theme.set("tourian".to_string());
-                        StorageService::set_item("theme", "tourian");
+                        StorageService::new().set_item("theme", "tourian");
                         if let Some(win) = web_sys::window()
                             && let Some(doc) = win.document()
                             && let Some(el) = doc.document_element()

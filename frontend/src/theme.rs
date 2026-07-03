@@ -1,11 +1,12 @@
-use crate::storage::StorageService;
+use shared_frontend::storage::StorageService;
 use shared_frontend::theme::{Theme, mapping::Scheme};
 use yew::prelude::*;
 
 #[hook]
 pub fn use_theme() -> (UseStateHandle<String>, Callback<MouseEvent>) {
     let theme = use_state(|| {
-        let raw = StorageService::get_item("theme", Theme::default().name());
+        let raw = StorageService::new().get_item("theme");
+        let raw = if raw.is_empty() { Theme::default().name().to_string() } else { raw };
         let theme = if let Some(scheme) = Scheme::from_id(&raw) {
             scheme.to_theme().name().to_string()
         } else {
@@ -15,7 +16,7 @@ pub fn use_theme() -> (UseStateHandle<String>, Callback<MouseEvent>) {
                 .to_string()
         };
         if theme != raw {
-            StorageService::set_item("theme", &theme);
+            StorageService::new().set_item("theme", &theme);
         }
         theme
     });
@@ -40,7 +41,7 @@ pub fn use_theme() -> (UseStateHandle<String>, Callback<MouseEvent>) {
                 .unwrap();
             let _ = el.set_attribute("data-theme", next.name());
             let _ = el.set_attribute("class", next.name());
-            StorageService::set_item("theme", next.name());
+            StorageService::new().set_item("theme", next.name());
             theme.set(next.name().to_string());
         })
     };

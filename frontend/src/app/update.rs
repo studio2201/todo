@@ -1,6 +1,6 @@
 use crate::api;
 use crate::app::{App, Msg};
-use crate::storage::StorageService;
+use shared_frontend::storage::StorageService;
 use crate::types::ToastType;
 use shared_core::types::PinRequiredResponse;
 use wasm_bindgen_futures::spawn_local;
@@ -11,7 +11,8 @@ use shared_frontend::i18n::Language;
 
 impl App {
     pub fn create_app(ctx: &Context<Self>) -> Self {
-        let raw = StorageService::get_item("theme", Theme::default().name());
+        let raw = StorageService::new().get_item("theme");
+        let raw = if raw.is_empty() { Theme::default().name().to_string() } else { raw };
         let theme = if let Some(scheme) = Scheme::from_id(&raw) {
             scheme.to_theme().name().to_string()
         } else {
@@ -21,7 +22,7 @@ impl App {
                 .to_string()
         };
         if theme != raw {
-            StorageService::set_item("theme", &theme);
+            StorageService::new().set_item("theme", &theme);
         }
         
         if let Some(win) = web_sys::window()
@@ -33,7 +34,8 @@ impl App {
         }
 
 
-        let local_lang = StorageService::get_item("lang", "en");
+        let local_lang = StorageService::new().get_item("lang");
+        let local_lang = if local_lang.is_empty() { "en".to_string() } else { local_lang };
         let locale = crate::i18n::Locale::from_str(&local_lang);
 
         let link = ctx.link().clone();
@@ -119,7 +121,7 @@ impl App {
                 }
                 if !config.enable_themes {
                     self.theme = "tourian".to_string();
-                    StorageService::set_item("theme", "tourian");
+                    StorageService::new().set_item("theme", "tourian");
                     if let Some(win) = web_sys::window()
                         && let Some(doc) = win.document()
                         && let Some(el) = doc.document_element()
@@ -155,7 +157,7 @@ impl App {
                 true
             }
             Msg::SwitchLanguage(loc) => {
-                StorageService::set_item("lang", loc.to_str());
+                StorageService::new().set_item("lang", loc.to_str());
                 self.locale = loc;
                 true
             }
@@ -169,7 +171,7 @@ impl App {
                     Theme::Tourian => Theme::Crateria,
                     Theme::Crateria => Theme::Brinstar,
                 };
-                StorageService::set_item("theme", next.name());
+                StorageService::new().set_item("theme", next.name());
                 if let Some(html) = web_sys::window()
                     .and_then(|w| w.document())
                     .and_then(|d| d.document_element())
