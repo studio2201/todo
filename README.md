@@ -1,58 +1,102 @@
-# Todo - Blazing Fast Todo List
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/UberMetroid/todo/main/frontend/Assets/favicon.png?v=3.0.1" alt="Todo Logo" width="128" height="128">
-</p>
+# Todo — Blazing Fast Todo List <img src="https://raw.githubusercontent.com/UberMetroid/unraid-templates/main/icons/todo.png" width="48" height="48" alt="todo logo" align="right">
 
 Todo is a blazing fast, single-purpose todo list application written in 100% Rust. Built with a high-performance Rust (Axum/Tokio) backend and a WebAssembly (Yew) frontend.
 
 ---
 
-## Key Features
+## 🏛️ Architecture & Stack
+*   **Frontend**: Yew (WASM)
+*   **Backend**: Axum (Rust) / Tokio
+*   **Deployment**: Nix-built Container / Unraid native / Docker Compose
 
-*   **Dynamic Themes**: Dynamic theme options.
+---
+
+## 🟢 Key Features
+*   **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
+*   **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
 *   **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
+*   **Dynamic Themes**: Super Metroid UI themes (Crateria, Brinstar, Norfair, Wrecked Ship, Maridia, Tourian).
 *   **Internationalization**: Built-in multilingual translation selector support.
 *   **Print Optimization**: Customized print stylesheet layout and print header action button.
 *   **Performance First**: Tiny resource footprint, zero external JS engine dependencies, and rapid page load speeds.
-*   **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
-*   **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
 
 ---
 
-## Container Registry
+## 💾 Deployment & Installation
 
-The Docker image is built with **Nix** (no Alpine, fully reproducible) and published to Docker Hub:
+### Docker Compose
+Create a `docker-compose.yml` file with the following service definition:
 
-*   **Docker Hub**: [ubermetroid/todo](https://hub.docker.com/r/ubermetroid/todo)
+```yaml
+services:
+  todo:
+    image: ubermetroid/todo:latest
+    container_name: todo
+    restart: unless-stopped
+    ports:
+      - ${PORT:-4403}:4403
+    volumes:
+      - ${TODO_DATA_PATH:-./data}:/app/data
+    environment:
+      PORT: 4403
+      SITE_TITLE: ${TODO_SITE_TITLE:-Todo}
+      TODO_PIN: ${TODO_PIN:-}
+      BASE_URL: ${TODO_BASE_URL:-http://localhost:4403}
+      ALLOWED_ORIGINS: ${TODO_ALLOWED_ORIGINS:-*}
+      TZ: ${TZ:-UTC}
+      SINGLE_LIST: ${SINGLE_LIST:-false}
+      ENABLE_TRANSLATION: ${ENABLE_TRANSLATION:-false}
+      ENABLE_THEMES: ${ENABLE_THEMES:-true}
+      ENABLE_PRINT: ${ENABLE_PRINT:-true}
+      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
+```
 
 ---
 
-## Configuration Options
+## ⚙️ Configuration Options
 
-Configure these settings inside your Docker Compose environment or container environment variables:
-
-| Variable | Description | Default |
+| Environment Variable | Description | Default |
 | :--- | :--- | :--- |
 | `PORT` | The port number the backend HTTP server will bind to inside the container. | `4403` |
 | `SITE_TITLE` | Custom website title rendered in navigation headers, browser tabs, and PWA manifest. | `Todo` |
-| `BASE_URL` | Application base URL. Essential when deploying behind reverse proxies to ensure redirect and websocket links are resolved correctly. | `http://localhost:4403` |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed HTTP request origins (CORS filter). Use `*` to allow all origins. | `*` |
-| `TODO_PIN` | Optional 4–10 digit PIN (numerical only) to lock access to the interface. Leave empty for public mode. | None |
+| `BASE_URL` | Application base URL. Essential when deploying behind reverse proxies. | `http://localhost:4403` |
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed HTTP request origins (CORS filter). | `*` |
+| `TODO_PIN` | Optional 4–10 digit numerical PIN to lock access to the interface. | None |
 | `TZ` | Timezone for the container processes and logs. | `UTC` |
 | `SINGLE_LIST` | Force UI to hide list switcher and display only a single list. | `false` |
-| `ENABLE_TRANSLATION` | Enable the multi-language / translation selector in the navigation header (true/false). | `false` |
-| `ENABLE_THEMES` | Enable the theme selector in the navigation header (true/false). | `true` |
-| `ENABLE_PRINT` | Enable the print button in the navigation header (true/false). | `true` |
-| `MAX_ATTEMPTS` | Number of failed PIN attempts permitted before locking out the user client IP address. | `5` |
-| `LOCKOUT_TIME_MINUTES` | Lockout duration in minutes for IPs exceeding `MAX_ATTEMPTS`. | `15` |
+| `ENABLE_TRANSLATION` | Enable the multi-language / translation selector in the navigation header. | `false` |
+| `ENABLE_THEMES` | Enable the theme selector in the navigation header. | `true` |
+| `ENABLE_PRINT` | Enable the print button in the navigation header. | `true` |
+| `MAX_ATTEMPTS` | Number of failed PIN attempts permitted before rate lockout. | `5` |
+| `LOCKOUT_TIME_MINUTES` | Bruteforce lockout duration in minutes. | `15` |
 | `COOKIE_MAX_AGE_HOURS` | Duration in hours that the user's PIN session cookie remains valid. | `24` |
 | `SHUTDOWN_DRAIN_SECONDS` | Seconds to wait for active connections to finish before shutting down. | `5` |
-| `SHOW_VERSION` | Display the application version number in the footer (true/false). | `true` |
-| `SHOW_GITHUB` | Display the GitHub repository link in the footer (true/false). | `true` |
+| `SHOW_VERSION` | Display the application version number in the footer. | `true` |
+| `SHOW_GITHUB` | Display the GitHub repository link in the footer. | `true` |
 | `TRUST_PROXY` | Set `true` if backend is hosted behind a reverse proxy. | `false` |
 | `TRUSTED_PROXY_IPS` | Comma-separated IP/CIDR list of trusted upstream proxies. | None |
 
 ---
 
-*Note: This repository was forked from [DumbDo](https://github.com/DumbWareio/DumbDo).*
+## 🛠️ Local Development
+
+Ensure you have the Rust toolchain and Trunk installed.
+
+```bash
+# 1. Run workspace tests
+cargo test
+
+# 2. Run clippy workspace checks
+cargo clippy --workspace --all-targets
+
+# 3. Start frontend Yew dev server (from frontend/)
+cd frontend && trunk serve
+
+# 4. Start backend Axum server (from backend/)
+cd backend && cargo run
+```
+
+---
+
+## 📄 License
+Licensed under the [Apache License, Version 2.0](LICENSE). Copyright 2026 UberMetroid.
