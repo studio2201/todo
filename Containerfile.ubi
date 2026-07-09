@@ -1,5 +1,5 @@
 # =============================================================================
-# Todo — UBI pilot image (Red Hat Universal Base Image)
+# Todo — UBI container image (Red Hat Universal Base Image)
 # =============================================================================
 # What you ship: ubi9/ubi-minimal runtime (RHEL-family RPM userspace).
 # Build stage: rust official image (reliable wasm32 + trunk). Runtime is pure UBI.
@@ -17,7 +17,7 @@
 #     todo-ubi:latest
 #
 # Compare size:
-#   podman images | grep -E 'todo-ubi|todo-nix|ubermetroid/todo'
+#   podman images | grep -E 'todo-ubi|ubermetroid/todo'
 # =============================================================================
 
 # ---------- build: compile backend + WASM frontend ----------

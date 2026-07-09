@@ -7,7 +7,7 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 ## 🏛️ Architecture & Stack
 *   **Frontend**: Yew (WASM)
 *   **Backend**: Axum (Rust) / Tokio
-*   **Deployment**: Nix-built Container / Unraid native / Docker Compose
+*   **Deployment**: UBI container (Red Hat UBI9) on Docker Hub / Unraid / Podman / Docker Compose
 
 ---
 
@@ -23,6 +23,25 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 ---
 
 ## 💾 Deployment & Installation
+
+### Container images (Docker Hub)
+
+Images are **UBI9-minimal** based (Red Hat Universal Base Image). Tags:
+
+| Tag | Meaning |
+| :--- | :--- |
+| `latest` | Current recommended build |
+| `ubi` | Explicit UBI image (same lineage as `latest`) |
+| `3.0.21` | Immutable release pin |
+
+```bash
+# Pull examples
+podman pull docker.io/ubermetroid/todo:latest
+podman pull docker.io/ubermetroid/todo:ubi
+podman pull docker.io/ubermetroid/todo:3.0.21
+```
+
+Hub: [https://hub.docker.com/r/ubermetroid/todo](https://hub.docker.com/r/ubermetroid/todo)
 
 ### Docker Compose
 Create a `docker-compose.yml` file with the following service definition:
@@ -49,6 +68,24 @@ services:
       ENABLE_THEMES: ${ENABLE_THEMES:-true}
       ENABLE_PRINT: ${ENABLE_PRINT:-true}
       MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
+```
+
+### Build the UBI image locally
+
+Requires [Podman](https://podman.io/) (or Docker) and network access to pull base images and crates.
+
+```bash
+# From the repository root
+podman build --format docker -f Containerfile.ubi \
+  -t docker.io/ubermetroid/todo:3.0.21 \
+  -t docker.io/ubermetroid/todo:latest \
+  -t docker.io/ubermetroid/todo:ubi \
+  .
+
+# Optional: push all three tags
+podman push docker.io/ubermetroid/todo:3.0.21
+podman push docker.io/ubermetroid/todo:latest
+podman push docker.io/ubermetroid/todo:ubi
 ```
 
 ---
