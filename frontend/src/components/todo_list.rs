@@ -14,6 +14,7 @@ use yew::prelude::*;
 pub struct TodoListProps {
     pub site_config: SiteConfig,
     pub todos: UseStateHandle<Option<TodoLists>>,
+    pub data_version: UseStateHandle<u64>,
     pub current_list: UseStateHandle<String>,
     pub theme: String,
     pub on_toggle_theme: Callback<MouseEvent>,
@@ -37,15 +38,28 @@ pub fn todo_list(props: &TodoListProps) -> Html {
 
     let save_list_todos = {
         let todos = props.todos.clone();
+        let data_version = props.data_version.clone();
         let show_toast = props.show_toast.clone();
         Callback::from(move |updated_todos: TodoLists| {
             let todos = todos.clone();
+            let data_version = data_version.clone();
             let show_toast = show_toast.clone();
+            let version = *data_version;
             let lang = Language::from_code(locale.to_str());
             show_toast.emit((lookup(StringKey::StatusSaving, lang).to_string(), ToastType::Success));
             wasm_bindgen_futures::spawn_local(async move {
-                match api::save_todos(&updated_todos).await {
+                match api::save_todos(&updated_todos, version).await {
                     Ok(resp) if resp.status() == 200 => {
+                        // Advance local version from server response when present.
+                        if let Ok(body) = resp.json::<serde_json::Value>().await {
+                            if let Some(v) = body.get("version").and_then(|x| x.as_u64()) {
+                                data_version.set(v);
+                            } else {
+                                data_version.set(version + 1);
+                            }
+                        } else {
+                            data_version.set(version + 1);
+                        }
                         todos.set(Some(updated_todos));
                         show_toast.emit((lookup(StringKey::StatusSaved, lang).to_string(), ToastType::Success));
                     }

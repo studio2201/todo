@@ -1,7 +1,17 @@
 use gloo_net::http::{Request, Response};
+use serde::{Deserialize, Serialize};
 use shared_core::types::{
     PinRequiredResponse, SiteConfig, TodoLists, VerifyPinRequest, VerifyPinResponse,
 };
+
+/// Wire envelope matching the backend [`TodoState`] / `data/todos.json` shape.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct TodoEnvelope {
+    #[serde(default)]
+    pub version: u64,
+    #[serde(default)]
+    pub lists: TodoLists,
+}
 
 // Fetches the site configuration properties from the server
 pub async fn fetch_config() -> Result<SiteConfig, gloo_net::Error> {
@@ -30,9 +40,13 @@ pub async fn verify_pin(pin: &str) -> Result<VerifyPinResponse, gloo_net::Error>
         .await
 }
 
-// Saves the entire updated lists structure back to the server
-pub async fn save_todos(todos: &TodoLists) -> Result<Response, gloo_net::Error> {
-    Request::post("/api/todos").json(todos)?.send().await
+/// Saves lists with the optimistic-concurrency version the client last observed.
+pub async fn save_todos(todos: &TodoLists, version: u64) -> Result<Response, gloo_net::Error> {
+    let body = TodoEnvelope {
+        version,
+        lists: todos.clone(),
+    };
+    Request::post("/api/todos").json(&body)?.send().await
 }
 
 // Submits a POST request to logout and clear authentication cookies

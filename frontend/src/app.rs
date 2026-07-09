@@ -6,7 +6,7 @@ use yew::prelude::*;
 use shared_frontend::i18n::strings::{lookup, StringKey};
 use shared_frontend::i18n::Language;
 
-use crate::api;
+use crate::api::{self, TodoEnvelope};
 use crate::types::ToastType;
 use shared_core::types::{PinRequiredResponse, SiteConfig, TodoLists};
 
@@ -29,6 +29,8 @@ pub fn app() -> Html {
     });
     let authenticated = use_state(|| false);
     let todos = use_state(|| None::<TodoLists>);
+    // Optimistic-concurrency token from the last successful GET/POST envelope.
+    let data_version = use_state(|| 0u64);
     let current_list = use_state(|| "List 1".to_string());
     let active_notification = use_state(|| None::<(String, String)>);
     let active_timeout = use_mut_ref(|| None::<Timeout>);
@@ -109,16 +111,18 @@ pub fn app() -> Html {
     }
 
     let load_todos = {
-        let (todos, current_list, authenticated, show_toast, locale) = (
+        let (todos, data_version, current_list, authenticated, show_toast, locale) = (
             todos.clone(),
+            data_version.clone(),
             current_list.clone(),
             authenticated.clone(),
             show_toast.clone(),
             locale.clone(),
         );
         move || {
-            let (todos, current_list, authenticated, show_toast, locale) = (
+            let (todos, data_version, current_list, authenticated, show_toast, locale) = (
                 todos.clone(),
+                data_version.clone(),
                 current_list.clone(),
                 authenticated.clone(),
                 show_toast.clone(),
@@ -129,14 +133,16 @@ pub fn app() -> Html {
                     Ok(resp) => {
                         if resp.status() == 401 {
                             authenticated.set(false);
-                        } else if let Ok(data) = resp.json::<TodoLists>().await {
+                        } else if let Ok(envelope) = resp.json::<TodoEnvelope>().await {
                             authenticated.set(true);
+                            let data = envelope.lists;
                             if !data.is_empty()
                                 && !data.contains_key(&*current_list)
                                 && let Some(first_key) = data.keys().next()
                             {
                                 current_list.set(first_key.clone());
                             }
+                            data_version.set(envelope.version);
                             todos.set(Some(data));
                         }
                     }
@@ -252,6 +258,7 @@ pub fn app() -> Html {
         (*pin_required).clone(),
         authenticated,
         todos,
+        data_version,
         current_list,
         active_notification.clone(),
         (*pin_error).clone(),

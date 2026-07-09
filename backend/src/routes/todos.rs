@@ -37,8 +37,11 @@ pub async fn get_todos(State(state): State<SharedState>) -> Response {
     })
     .await;
 
+    // Return the full envelope so clients can round-trip `version` on save.
+    // Returning only `lists` forced version=0 on the next POST and caused 409s
+    // after the first versioned write.
     match read_result {
-        Ok(Ok((todo_state, _needs_rewrite))) => Json(todo_state.lists).into_response(),
+        Ok(Ok((todo_state, _needs_rewrite))) => Json(todo_state).into_response(),
         Ok(Err(msg)) => (
             StatusCode::SERVICE_UNAVAILABLE,
             format!(

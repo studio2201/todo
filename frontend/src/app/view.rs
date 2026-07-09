@@ -16,6 +16,7 @@ pub fn render_app(
     pin_required: Option<PinRequiredResponse>,
     authenticated: UseStateHandle<bool>,
     todos: UseStateHandle<Option<TodoLists>>,
+    data_version: UseStateHandle<u64>,
     current_list: UseStateHandle<String>,
     active_notification: UseStateHandle<Option<(String, String)>>,
     pin_error: Option<String>,
@@ -104,6 +105,7 @@ pub fn render_app(
                         <TodoList
                             site_config={config.clone()}
                             todos={todos.clone()}
+                            data_version={data_version.clone()}
                             current_list={current_list.clone()}
                             theme={theme}
                             on_toggle_theme={toggle_theme.clone()}
