@@ -42,12 +42,12 @@ Images are **UBI9-minimal** based (Red Hat Universal Base Image). Tags:
 
 ```bash
 # Pull examples
-podman pull docker.io/ghcr.io/etecoons/todo:latest
-podman pull docker.io/ghcr.io/etecoons/todo:ubi
-podman pull docker.io/ghcr.io/etecoons/todo:3.0.21
+podman pull ghcr.io/etecoons/todo:latest
+podman pull ghcr.io/etecoons/todo:ubi
+podman pull ghcr.io/etecoons/todo:3.0.21
 ```
 
-Hub: [https://hub.docker.com/r/ghcr.io/etecoons/todo](https://hub.docker.com/r/ghcr.io/etecoons/todo)
+Hub: [https://github.com/etecoons/todo/pkgs/container/todo](https://github.com/etecoons/todo/pkgs/container/todo)
 
 ### Docker Compose
 Create a `docker-compose.yml` file with the following service definition:
@@ -83,15 +83,15 @@ Requires [Podman](https://podman.io/) (or Docker) and network access to pull bas
 ```bash
 # From the repository root
 podman build --format docker -f Containerfile.ubi \
- -t docker.io/ghcr.io/etecoons/todo:3.0.21 \
- -t docker.io/ghcr.io/etecoons/todo:latest \
- -t docker.io/ghcr.io/etecoons/todo:ubi \
+ -t ghcr.io/etecoons/todo:3.0.21 \
+ -t ghcr.io/etecoons/todo:latest \
+ -t ghcr.io/etecoons/todo:ubi \
  .
 
 # Optional: push all three tags
-podman push docker.io/ghcr.io/etecoons/todo:3.0.21
-podman push docker.io/ghcr.io/etecoons/todo:latest
-podman push docker.io/ghcr.io/etecoons/todo:ubi
+podman push ghcr.io/etecoons/todo:3.0.21
+podman push ghcr.io/etecoons/todo:latest
+podman push ghcr.io/etecoons/todo:ubi
 ```
 
 ---
