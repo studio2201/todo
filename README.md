@@ -1,28 +1,34 @@
+<p align="center">
+  <a href="https://github.com/etecoons">
+    <img src="assets/header.jpg" alt="etecoons banner" width="100%">
+  </a>
+</p>
+
 # Todo — Blazing Fast Todo List <img src="https://raw.githubusercontent.com/etecoons/unraid-apps/main/icons/todo.png" width="48" height="48" alt="todo logo" align="right">
 
 Todo is a blazing fast, single-purpose todo list application written in 100% Rust. Built with a high-performance Rust (Axum/Tokio) backend and a WebAssembly (Yew) frontend.
 
 ---
 
-## 🏛️ Architecture & Stack
-*   **Frontend**: Yew (WASM)
-*   **Backend**: Axum (Rust) / Tokio
-*   **Deployment**: UBI container (Red Hat UBI9) on Docker Hub / Unraid / Podman / Docker Compose
+## Architecture & Stack
+* **Frontend**: Yew (WASM)
+* **Backend**: Axum (Rust) / Tokio
+* **Deployment**: UBI container (Red Hat UBI9) on Docker Hub / Unraid / Podman / Docker Compose
 
 ---
 
 ## 🟢 Key Features
-*   **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
-*   **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
-*   **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
-*   **Dynamic Themes**: Super Metroid UI themes (Crateria, Brinstar, Norfair, Wrecked Ship, Maridia, Tourian).
-*   **Internationalization**: Built-in multilingual translation selector support.
-*   **Print Optimization**: Customized print stylesheet layout and print header action button.
-*   **Performance First**: Tiny resource footprint, zero external JS engine dependencies, and rapid page load speeds.
+* **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
+* **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
+* **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
+* **Dynamic Themes**: Super Metroid UI themes (Crateria, Brinstar, Norfair, Wrecked Ship, Maridia, Tourian).
+* **Internationalization**: Built-in multilingual translation selector support.
+* **Print Optimization**: Customized print stylesheet layout and print header action button.
+* **Performance First**: Tiny resource footprint, zero external JS engine dependencies, and rapid page load speeds.
 
 ---
 
-## 💾 Deployment & Installation
+## Deployment & Installation
 
 ### Container images (Docker Hub)
 
@@ -48,26 +54,26 @@ Create a `docker-compose.yml` file with the following service definition:
 
 ```yaml
 services:
-  todo:
-    image: etecoons/todo:latest
-    container_name: todo
-    restart: unless-stopped
-    ports:
-      - ${PORT:-4403}:4403
-    volumes:
-      - ${TODO_DATA_PATH:-./data}:/app/data
-    environment:
-      PORT: 4403
-      SITE_TITLE: ${TODO_SITE_TITLE:-Todo}
-      TODO_PIN: ${TODO_PIN:-}
-      BASE_URL: ${TODO_BASE_URL:-http://localhost:4403}
-      ALLOWED_ORIGINS: ${TODO_ALLOWED_ORIGINS:-*}
-      TZ: ${TZ:-UTC}
-      SINGLE_LIST: ${SINGLE_LIST:-false}
-      ENABLE_TRANSLATION: ${ENABLE_TRANSLATION:-false}
-      ENABLE_THEMES: ${ENABLE_THEMES:-true}
-      ENABLE_PRINT: ${ENABLE_PRINT:-true}
-      MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
+ todo:
+ image: etecoons/todo:latest
+ container_name: todo
+ restart: unless-stopped
+ ports:
+ - ${PORT:-4403}:4403
+ volumes:
+ - ${TODO_DATA_PATH:-./data}:/app/data
+ environment:
+ PORT: 4403
+ SITE_TITLE: ${TODO_SITE_TITLE:-Todo}
+ TODO_PIN: ${TODO_PIN:-}
+ BASE_URL: ${TODO_BASE_URL:-http://localhost:4403}
+ ALLOWED_ORIGINS: ${TODO_ALLOWED_ORIGINS:-*}
+ TZ: ${TZ:-UTC}
+ SINGLE_LIST: ${SINGLE_LIST:-false}
+ ENABLE_TRANSLATION: ${ENABLE_TRANSLATION:-false}
+ ENABLE_THEMES: ${ENABLE_THEMES:-true}
+ ENABLE_PRINT: ${ENABLE_PRINT:-true}
+ MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
 ```
 
 ### Build the UBI image locally
@@ -77,10 +83,10 @@ Requires [Podman](https://podman.io/) (or Docker) and network access to pull bas
 ```bash
 # From the repository root
 podman build --format docker -f Containerfile.ubi \
-  -t docker.io/etecoons/todo:3.0.21 \
-  -t docker.io/etecoons/todo:latest \
-  -t docker.io/etecoons/todo:ubi \
-  .
+ -t docker.io/etecoons/todo:3.0.21 \
+ -t docker.io/etecoons/todo:latest \
+ -t docker.io/etecoons/todo:ubi \
+ .
 
 # Optional: push all three tags
 podman push docker.io/etecoons/todo:3.0.21
@@ -90,7 +96,7 @@ podman push docker.io/etecoons/todo:ubi
 
 ---
 
-## ⚙️ Configuration Options
+## Configuration Options
 
 | Environment Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -115,7 +121,7 @@ podman push docker.io/etecoons/todo:ubi
 
 ---
 
-## 🛠️ Local Development
+## Local Development
 
 Ensure you have the Rust toolchain and Trunk installed.
 
@@ -135,5 +141,5 @@ cd backend && cargo run
 
 ---
 
-## 📄 License
+## License
 Licensed under the [Apache License, Version 2.0](LICENSE). Copyright 2026 etecoons.
