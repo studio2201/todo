@@ -17,7 +17,7 @@ Todo is a blazing fast, single-purpose todo list application written in 100% Rus
 
 ---
 
-## 🟢 Key Features
+## Key Features
 * **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
 * **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
 * **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
