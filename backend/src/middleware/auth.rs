@@ -2,7 +2,7 @@
 //!
 //! The PIN verification, lockout, and rate-limit logic is delegated to
 //! `shared_backend::auth::attempts` and `shared_backend::server::ip` so that
-//! every UberMetroid companion app uses the same primitives.
+//! every etecoons companion app uses the same primitives.
 //!
 //! This module retains only the **todo-specific** helpers:
 //!

@@ -1,8 +1,8 @@
 [package]
 name = "frontend"
-version = "3.0.22"
+version = "3.0.23"
 edition = "2024"
-authors = ["UberMetroid"]
+authors = ["etecoons"]
 license = "Apache-2.0"
 repository = "https://github.com/etecoons/todo"
 homepage = "https://github.com/etecoons/todo"
@@ -10,8 +10,8 @@ description = "Yew frontend application for Todo."
 readme = "../README.md"
 
 [dependencies]
-shared-core = { git = "https://github.com/etecoons/shared-assets.git", tag = "v3.0.20" }
-shared-frontend = { git = "https://github.com/etecoons/shared-assets.git", tag = "v3.0.20" }
+shared-core = { git = "https://github.com/etecoons/shared-assets.git", tag = "v3.0.21" }
+shared-frontend = { git = "https://github.com/etecoons/shared-assets.git", tag = "v3.0.21" }
 yew = { version = "0.23", features = ["csr"] }
 wasm-bindgen = "=0.2.121"
 wasm-bindgen-futures = "=0.4.71"

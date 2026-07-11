@@ -5,7 +5,7 @@
 # Build stage: rust official image (reliable wasm32 + trunk). Runtime is pure UBI.
 #
 # Build (Podman):
-#   cd ~/Projects/ubermetroid/todo
+#   cd ~/Projects/etecoons/todo
 #   podman build -f Containerfile.ubi -t todo-ubi:latest .
 #
 # Run:
@@ -17,7 +17,7 @@
 #     todo-ubi:latest
 #
 # Compare size:
-#   podman images | grep -E 'todo-ubi|ubermetroid/todo'
+#   podman images | grep -E 'todo-ubi|etecoons/todo'
 # =============================================================================
 
 # ---------- build: compile backend + WASM frontend ----------
