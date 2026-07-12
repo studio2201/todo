@@ -4,142 +4,14 @@
   </a>
 </p>
 
-# Todo — Blazing Fast Todo List <img src="https://raw.githubusercontent.com/etecoons/unraid-apps/main/icons/todo.png" width="48" height="48" alt="todo logo" align="right">
+# Todo
 
-Todo is a blazing fast, single-purpose todo list application written in 100% Rust. Built with a high-performance Rust (Axum/Tokio) backend and a WebAssembly (Yew) frontend.
+Minimalist task management and todo application in Rust.
 
----
+## Quick Start
 
-## Architecture & Stack
-* **Frontend**: Yew (WASM)
-* **Backend**: Axum (Rust) / Tokio
-* **Deployment**: UBI container (Red Hat UBI9) on Docker Hub / Unraid / Podman / Docker Compose
-
----
-
-## Key Features
-* **Multi-List Tasking**: Create and switch between multiple list tasks, or lock to a single list view.
-* **Keyboard Shortcuts**: Quick keyboard management for lists and tasks.
-* **Access PIN Security**: Lock down the interface with an optional numerical PIN for absolute privacy.
-* **Dynamic Themes**: Super Metroid UI themes (Crateria, Brinstar, Norfair, Wrecked Ship, Maridia, Tourian).
-* **Internationalization**: Built-in multilingual translation selector support.
-* **Print Optimization**: Customized print stylesheet layout and print header action button.
-* **Performance First**: Tiny resource footprint, zero external JS engine dependencies, and rapid page load speeds.
-
----
-
-## Deployment & Installation
-
-### Container images (Docker Hub)
-
-Images are **UBI9-minimal** based (Red Hat Universal Base Image). Tags:
-
-| Tag | Meaning |
-| :--- | :--- |
-| `latest` | Current recommended build |
-| `ubi` | Explicit UBI image (same lineage as `latest`) |
-| `3.0.21` | Immutable release pin |
-
+### Self-Hosting (Docker)
+Pull and run the official Docker container:
 ```bash
-# Pull examples
-podman pull ghcr.io/etecoons/todo:latest
-podman pull ghcr.io/etecoons/todo:ubi
-podman pull ghcr.io/etecoons/todo:3.0.21
+docker run -d -p 4403:4403 -v /path/to/appdata:/app/data ghcr.io/etecoons/todo:latest
 ```
-
-Hub: [https://github.com/etecoons/todo/pkgs/container/todo](https://github.com/etecoons/todo/pkgs/container/todo)
-
-### Docker Compose
-Create a `docker-compose.yml` file with the following service definition:
-
-```yaml
-services:
- todo:
- image: ghcr.io/etecoons/todo:latest
- container_name: todo
- restart: unless-stopped
- ports:
- - ${PORT:-4403}:4403
- volumes:
- - ${TODO_DATA_PATH:-./data}:/app/data
- environment:
- PORT: 4403
- SITE_TITLE: ${TODO_SITE_TITLE:-Todo}
- TODO_PIN: ${TODO_PIN:-}
- BASE_URL: ${TODO_BASE_URL:-http://localhost:4403}
- ALLOWED_ORIGINS: ${TODO_ALLOWED_ORIGINS:-*}
- TZ: ${TZ:-UTC}
- SINGLE_LIST: ${SINGLE_LIST:-false}
- ENABLE_TRANSLATION: ${ENABLE_TRANSLATION:-false}
- ENABLE_THEMES: ${ENABLE_THEMES:-true}
- ENABLE_PRINT: ${ENABLE_PRINT:-true}
- MAX_ATTEMPTS: ${MAX_ATTEMPTS:-5}
-```
-
-### Build the UBI image locally
-
-Requires [Podman](https://podman.io/) (or Docker) and network access to pull base images and crates.
-
-```bash
-# From the repository root
-podman build --format docker -f Containerfile.ubi \
- -t ghcr.io/etecoons/todo:3.0.21 \
- -t ghcr.io/etecoons/todo:latest \
- -t ghcr.io/etecoons/todo:ubi \
- .
-
-# Optional: push all three tags
-podman push ghcr.io/etecoons/todo:3.0.21
-podman push ghcr.io/etecoons/todo:latest
-podman push ghcr.io/etecoons/todo:ubi
-```
-
----
-
-## Configuration Options
-
-| Environment Variable | Description | Default |
-| :--- | :--- | :--- |
-| `PORT` | The port number the backend HTTP server will bind to inside the container. | `4403` |
-| `SITE_TITLE` | Custom website title rendered in navigation headers, browser tabs, and PWA manifest. | `Todo` |
-| `BASE_URL` | Application base URL. Essential when deploying behind reverse proxies. | `http://localhost:4403` |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed HTTP request origins (CORS filter). | `*` |
-| `TODO_PIN` | Optional 4–10 digit numerical PIN to lock access to the interface. | None |
-| `TZ` | Timezone for the container processes and logs. | `UTC` |
-| `SINGLE_LIST` | Force UI to hide list switcher and display only a single list. | `false` |
-| `ENABLE_TRANSLATION` | Enable the multi-language / translation selector in the navigation header. | `false` |
-| `ENABLE_THEMES` | Enable the theme selector in the navigation header. | `true` |
-| `ENABLE_PRINT` | Enable the print button in the navigation header. | `true` |
-| `MAX_ATTEMPTS` | Number of failed PIN attempts permitted before rate lockout. | `5` |
-| `LOCKOUT_TIME_MINUTES` | Bruteforce lockout duration in minutes. | `15` |
-| `COOKIE_MAX_AGE_HOURS` | Duration in hours that the user's PIN session cookie remains valid. | `24` |
-| `SHUTDOWN_DRAIN_SECONDS` | Seconds to wait for active connections to finish before shutting down. | `5` |
-| `SHOW_VERSION` | Display the application version number in the footer. | `true` |
-| `SHOW_GITHUB` | Display the GitHub repository link in the footer. | `true` |
-| `TRUST_PROXY` | Set `true` if backend is hosted behind a reverse proxy. | `false` |
-| `TRUSTED_PROXY_IPS` | Comma-separated IP/CIDR list of trusted upstream proxies. | None |
-
----
-
-## Local Development
-
-Ensure you have the Rust toolchain and Trunk installed.
-
-```bash
-# 1. Run workspace tests
-cargo test
-
-# 2. Run clippy workspace checks
-cargo clippy --workspace --all-targets
-
-# 3. Start frontend Yew dev server (from frontend/)
-cd frontend && trunk serve
-
-# 4. Start backend Axum server (from backend/)
-cd backend && cargo run
-```
-
----
-
-## License
-Licensed under the [Apache License, Version 2.0](LICENSE). Copyright 2026 etecoons.
