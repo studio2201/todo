@@ -25,6 +25,6 @@ tracing = "0.1"
 # Mirror of shared-assets's deps so we can call `constant_time_eq::constant_time_eq`
 # and `ipnet::IpNet` directly from this crate. Pulled in transitively by
 # shared-assets but declared explicitly per Rust convention.
-constant_time_eq = "0.3"
+constant_time_eq = "0.5"
 ipnet = "2.9"
 
