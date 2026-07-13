@@ -48,7 +48,9 @@ async fn main() {
     let is_production =
         std::env::var("NODE_ENV").unwrap_or_else(|_| "production".to_string()) == "production";
 
-    let data_dir = "data";
+    let data_dir = std::env::var("TODO_DATA_DIR")
+        .or_else(|_| std::env::var("DATA_DIR"))
+        .unwrap_or_else(|_| "data".to_string());
     let data_file = format!("{data_dir}/todos.json");
 
     if let Err(e) = std::fs::create_dir_all(data_dir) {
