@@ -7,6 +7,7 @@
 
 mod api;
 mod app;
+mod app_helpers;
 mod components;
 mod i18n;
 mod theme;
