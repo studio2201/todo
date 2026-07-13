@@ -6,7 +6,7 @@
 
 # Todo
 
-[![CI](https://github.com/etecoon/todo/actions/workflows/ci.yml/badge.svg)](https://github.com/etecoon/todo/actions/workflows/ci.yml)
+[![CI](https://github.com/etecoons/todo/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/etecoons/todo/actions/workflows/build-and-deploy.yml)
 
 Minimalist task management and todo application in Rust.
 
