@@ -121,6 +121,7 @@ ENV PORT=4403 \
     RUST_LOG=info \
     TODO_DATA_DIR=/config
 
+
 EXPOSE 4403
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
