@@ -46,6 +46,7 @@ mod tests {
             cookie_max_age_hours: 24,
             active_sessions: RwLock::new(std::collections::HashSet::new()),
             rate_limiter: RwLock::new(HashMap::new()),
+            todos_lock: tokio::sync::Mutex::new(()),
         })
     }
 

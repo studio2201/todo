@@ -47,6 +47,7 @@ pub struct AppState {
     /// Per-IP sliding-window request timestamps for the custom
     /// `rate_limit_middleware` (in addition to PIN-attempt lockouts).
     pub rate_limiter: RwLock<HashMap<String, Vec<Instant>>>,
+    pub todos_lock: tokio::sync::Mutex<()>,
 }
 
 impl AppState {
@@ -163,6 +164,7 @@ mod tests {
             cookie_max_age_hours: 24,
             active_sessions: RwLock::new(std::collections::HashSet::new()),
             rate_limiter: RwLock::new(HashMap::new()),
+            todos_lock: tokio::sync::Mutex::new(()),
         };
         for _ in 0..50 {
             assert!(state.check_rate_limit("1.1.1.1").await);
@@ -191,6 +193,7 @@ mod tests {
             cookie_max_age_hours: 24,
             active_sessions: RwLock::new(std::collections::HashSet::new()),
             rate_limiter: RwLock::new(HashMap::new()),
+            todos_lock: tokio::sync::Mutex::new(()),
         };
         for _ in 0..100 {
             assert!(state.check_rate_limit("1.1.1.1").await);

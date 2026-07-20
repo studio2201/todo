@@ -64,6 +64,7 @@ pub async fn save_todos(
     State(state): State<SharedState>,
     Json(value): Json<serde_json::Value>,
 ) -> Response {
+    let _lock = state.todos_lock.lock().await;
     let data_file = state.data_file.clone();
 
     // Parse payload as either TodoState or TodoLists
