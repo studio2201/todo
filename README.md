@@ -94,6 +94,10 @@ Distributed under the Apache 2.0 License. See [LICENSE](LICENSE) for details.
 
 ---
 
+### Project Banner Showcase
+
+Official **Todo** project banner illustrating clean minimalist task queue visual architecture.
+
 <p align="center">
   <a href="https://github.com/studio2201/todo">
     <img src="assets/todo-header.jpg" alt="studio2201 banner" width="100%">
