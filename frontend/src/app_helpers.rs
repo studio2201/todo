@@ -1,3 +1,11 @@
+//! Helpers for the top-level `App` component.
+//!
+//! `app.rs` is a single function with a chain of inline closures
+//! (load_todos, verify_submit_pin, on_logout, show_toast, ...).
+//! Extracting them into free functions keeps the orchestrator
+//! short enough to read end-to-end and lets each piece be unit-tested
+//! in isolation.
+
 pub fn setup_online_offline_listeners(
     show_toast: yew::Callback<(String, crate::types::ToastType)>,
     locale: yew::UseStateHandle<crate::i18n::Locale>,
@@ -36,4 +44,46 @@ pub fn setup_online_offline_listeners(
             window.add_event_listener_with_callback("offline", on_offline.as_ref().unchecked_ref());
         on_offline.forget();
     }
+}
+
+/// Issue a `GET /api/todos` request. On 401, clear authentication;
+/// otherwise parse the optimistic-concurrency envelope and update
+/// the `todos`, `data_version`, `current_list`, and `authenticated`
+/// state hooks. On a network error, emit a localised toast.
+#[allow(clippy::too_many_arguments)]
+pub fn load_todos(
+    todos: yew::UseStateHandle<Option<shared_core::types::TodoLists>>,
+    data_version: yew::UseStateHandle<u64>,
+    current_list: yew::UseStateHandle<String>,
+    authenticated: yew::UseStateHandle<bool>,
+    show_toast: yew::Callback<(String, crate::types::ToastType)>,
+    locale: yew::UseStateHandle<crate::i18n::Locale>,
+) {
+    use crate::api::{self, TodoEnvelope};
+    use crate::types::ToastType;
+
+    wasm_bindgen_futures::spawn_local(async move {
+        match api::fetch_todos_raw().await {
+            Ok(resp) => {
+                if resp.status() == 401 {
+                    authenticated.set(false);
+                } else if let Ok(envelope) = resp.json::<TodoEnvelope>().await {
+                    authenticated.set(true);
+                    let data = envelope.lists;
+                    if !data.is_empty()
+                        && !data.contains_key(&*current_list)
+                        && let Some(first_key) = data.keys().next()
+                    {
+                        current_list.set(first_key.clone());
+                    }
+                    data_version.set(envelope.version);
+                    todos.set(Some(data));
+                }
+            }
+            Err(_) => show_toast.emit((
+                crate::i18n::translate((*locale).clone(), crate::i18n::TransKey::FailedLoadTodos),
+                ToastType::Error,
+            )),
+        }
+    });
 }

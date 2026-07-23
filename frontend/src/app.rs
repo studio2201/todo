@@ -4,7 +4,7 @@ use gloo_timers::callback::Timeout;
 use shared_frontend::storage::StorageService;
 use yew::prelude::*;
 
-use crate::api::{self, TodoEnvelope};
+use crate::api;
 use crate::types::ToastType;
 use shared_core::types::{PinRequiredResponse, SiteConfig, TodoLists};
 
@@ -82,38 +82,14 @@ pub fn app() -> Html {
             locale.clone(),
         );
         move || {
-            let (todos, data_version, current_list, authenticated, show_toast, locale) = (
-                todos.clone(),
-                data_version.clone(),
-                current_list.clone(),
-                authenticated.clone(),
-                show_toast.clone(),
-                locale.clone(),
+            crate::app_helpers::load_todos(
+                todos,
+                data_version,
+                current_list,
+                authenticated,
+                show_toast,
+                locale,
             );
-            wasm_bindgen_futures::spawn_local(async move {
-                match api::fetch_todos_raw().await {
-                    Ok(resp) => {
-                        if resp.status() == 401 {
-                            authenticated.set(false);
-                        } else if let Ok(envelope) = resp.json::<TodoEnvelope>().await {
-                            authenticated.set(true);
-                            let data = envelope.lists;
-                            if !data.is_empty()
-                                && !data.contains_key(&*current_list)
-                                && let Some(first_key) = data.keys().next()
-                            {
-                                current_list.set(first_key.clone());
-                            }
-                            data_version.set(envelope.version);
-                            todos.set(Some(data));
-                        }
-                    }
-                    Err(_) => show_toast.emit((
-                        crate::i18n::translate(*locale, crate::i18n::TransKey::FailedLoadTodos),
-                        ToastType::Error,
-                    )),
-                }
-            });
         }
     };
 
