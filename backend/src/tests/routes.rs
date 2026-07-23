@@ -1,4 +1,4 @@
-use crate::auth::{generate_random_id, generate_session_id};
+use crate::auth::generate_random_id;
 use crate::routes;
 use crate::state::AppState;
 use axum::{
@@ -40,7 +40,7 @@ fn test_state() -> Arc<AppState> {
 
 #[test]
 fn session_id_format() {
-    let id = generate_session_id();
+    let id = shared_backend::session_id::generate_session_id();
     assert_eq!(id.len(), 32);
     assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
 }

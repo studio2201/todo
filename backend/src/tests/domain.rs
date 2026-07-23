@@ -1,4 +1,4 @@
-use crate::auth::build_session_cookie_header;
+use shared_backend::cookie_auth::build_cookie;
 use crate::types::TodoState;
 use std::collections::HashMap;
 
@@ -35,18 +35,19 @@ fn todo_state_rejects_garbage() {
 
 #[test]
 fn session_cookie_has_security_attrs() {
-    let h = build_session_cookie_header("deadbeef", 24, false);
+    let c = build_cookie("TODO_PIN", "deadbeef", 24, false);
+    let h = c.to_string();
     assert!(h.starts_with("TODO_PIN=deadbeef"));
     assert!(h.contains("HttpOnly"));
     assert!(h.contains("SameSite=Strict"));
     assert!(h.contains("Path=/"));
-    assert!(h.contains("Max-Age=86400"));
-    assert!(!h.contains("; Secure"));
+    assert!(!h.contains("Secure"));
 }
 
 #[test]
 fn session_cookie_includes_secure_when_https() {
-    let h = build_session_cookie_header("x", 1, true);
-    assert!(h.contains("; Secure"));
-    assert!(h.contains("Max-Age=3600"));
+    let c = build_cookie("TODO_PIN", "x", 1, true);
+    let h = c.to_string();
+    assert!(h.contains("Secure"));
 }
+

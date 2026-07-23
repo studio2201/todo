@@ -4,12 +4,12 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
-use axum_extra::extract::cookie::{Cookie, CookieJar};
+use axum_extra::extract::cookie::CookieJar;
 use std::net::SocketAddr;
 use std::time::Duration;
 
 use super::super::{PIN_MAX_LEN, PIN_MIN_LEN};
-use crate::auth::{build_session_cookie_header, secure_compare};
+use crate::auth::secure_compare;
 use crate::state::{SharedState, get_client_ip};
 use shared_core::types::{VerifyPinRequest, VerifyPinResponse};
 
@@ -102,32 +102,25 @@ pub async fn verify_pin(
         // Success — clear lockout counter, issue session cookie.
         shared_backend::auth::reset_attempts(&client_ip);
 
-        let session_id = crate::auth::generate_session_id();
+        let session_id = shared_backend::session_id::generate_session_id();
         state
             .active_sessions
             .write()
             .await
             .insert(session_id.clone());
 
-        let is_secure = headers
-            .get("x-forwarded-proto")
-            .and_then(|v| v.to_str().ok())
-            .map(|v| v.eq_ignore_ascii_case("https"))
-            .unwrap_or(false);
+        // Todo doesn't have a `base_url` config; the shared helper falls
+        // back to checking only the X-Forwarded-Proto header when given
+        // an empty base_url, which matches the prior local behaviour.
+        let is_secure = shared_backend::cookie_auth::cookie_should_be_secure(&headers, "");
 
-        let cookie_value =
-            build_session_cookie_header(&session_id, state.cookie_max_age_hours, is_secure);
-        let cookie = Cookie::build(("TODO_PIN", session_id))
-            .http_only(true)
-            .secure(is_secure)
-            .same_site(axum_extra::extract::cookie::SameSite::Strict)
-            .path("/")
-            .build();
-
+        let cookie = shared_backend::cookie_auth::build_cookie(
+            "TODO_PIN",
+            &session_id,
+            state.cookie_max_age_hours,
+            is_secure,
+        );
         let updated_jar = cookie_jar.add(cookie);
-
-        // We don't need the raw header string, but log it for diagnostics.
-        tracing::debug!(target: "auth", "session issued: cookie={cookie_value}");
 
         (
             StatusCode::OK,
