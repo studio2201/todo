@@ -37,9 +37,11 @@ use shared_backend::tracing_init::{default_log_dir, init_tracing};
 use state::AppState;
 
 #[tokio::main]
+
+
+
 mod cookie_auth;
 mod session_id;
-
 async fn main() {
     init_tracing(default_log_dir().as_deref());
 
