@@ -47,7 +47,7 @@ async fn main() {
     init_tracing(default_log_dir().as_deref());
 
     // ───── config ─────
-    let server_config = Arc::new(crate::config::AppConfig::load());
+    let server_config = Arc::new(crate::config::AppConfig::load_from_env(4403));
 
     let port = server_config.port;
     let allowed_origins = server_config.allowed_origins.clone();
